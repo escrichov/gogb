@@ -31,7 +31,7 @@ func (e *Emulator) manageKeyboardEvents() {
 					e.SetMessage(msg, time.Second*3)
 				case sdl.K_f:
 					e.showFPS = !e.showFPS
-				case sdl.K_p:
+				case sdl.K_k:
 					snapshotFile := "snapshot.png"
 					e.TakeSnapshot(snapshotFile)
 					msg := fmt.Sprintf("Snapshot saved: %s", snapshotFile)
@@ -41,6 +41,17 @@ func (e *Emulator) manageKeyboardEvents() {
 					e.BessStore(stateFile)
 					msg := fmt.Sprintf("State saved: %s", stateFile)
 					e.SetMessage(msg, time.Second*3)
+				case sdl.K_r:
+					e.reset = true
+					e.SetMessage("Reset", time.Second*3)
+				case sdl.K_p:
+					e.pause = !e.pause
+					if e.pause {
+						e.SetMessage("Paused", 0)
+					} else {
+						e.SetMessage("Continue", time.Second*3)
+					}
+
 				}
 			}
 		case *sdl.QuitEvent:

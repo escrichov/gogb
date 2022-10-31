@@ -105,7 +105,7 @@ func (e *Emulator) renderFrame() {
 		e.drawMessage()
 
 		now := time.Now()
-		if now.Sub(e.consoleMessageStart) > e.consoleMessageDuration {
+		if e.consoleMessageDuration != 0 && now.Sub(e.consoleMessageStart) > e.consoleMessageDuration {
 			e.showMessage = false
 		}
 	}

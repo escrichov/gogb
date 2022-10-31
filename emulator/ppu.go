@@ -140,7 +140,6 @@ func (e *Emulator) PPURun() bool {
 
 				if ly == (HEIGHT - 1) {
 					e.SetIF(e.GetIF() | 1)
-
 					renderFrame = true
 				}
 

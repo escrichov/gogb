@@ -20,6 +20,9 @@ type Emulator struct {
 	workRam  [0x4000]uint8
 	videoRam [0x2000]uint8
 
+	romFilename     string
+	bootRomFilename string
+
 	io                [0x200]uint8
 	extrambank        *[0x8000]uint8
 	ppuDot            int
@@ -53,6 +56,8 @@ type Emulator struct {
 	vsyncEnabled         bool
 	showFPS              bool
 	stop                 bool
+	pause                bool
+	reset                bool
 	bootRomEnabled       bool
 	romHeader            RomHeader
 	memoryBankController int
@@ -60,12 +65,14 @@ type Emulator struct {
 
 func NewEmulator(romFilename, saveFilename, bootRomFilename string) (*Emulator, error) {
 	emulator := Emulator{
-		ppuDot:       32,
-		rom1Pointer:  32768,
-		palette:      []int32{-1, -23197, -65536, -1 << 24, -1, -8092417, -12961132, -1 << 24},
-		vsyncEnabled: true,
-		showFPS:      false,
-		showMessage:  false,
+		ppuDot:          32,
+		rom1Pointer:     32768,
+		palette:         []int32{-1, -23197, -65536, -1 << 24, -1, -8092417, -12961132, -1 << 24},
+		vsyncEnabled:    true,
+		showFPS:         false,
+		showMessage:     false,
+		romFilename:     romFilename,
+		bootRomFilename: bootRomFilename,
 	}
 
 	if bootRomFilename == "" {
@@ -112,6 +119,10 @@ func (e *Emulator) Destroy() {
 func (e *Emulator) Run() {
 	e.stop = false
 	for {
+		if e.reset {
+			e.Reset()
+		}
+
 		e.prevCycles = e.cycles
 		if (e.IME & e.GetIF() & e.io[511]) != 0 {
 			e.SetIF(0)
@@ -121,6 +132,9 @@ func (e *Emulator) Run() {
 			e.tick()
 			e.push(e.cpu.PC)
 			e.cpu.PC = 64
+
+			e.loadGamesharkCodes()
+
 		} else if e.halt != 0 {
 			e.tick()
 		} else {
@@ -133,8 +147,40 @@ func (e *Emulator) Run() {
 			e.manageKeyboardEvents()
 		}
 
+		// Paused state
+		for e.pause {
+			e.renderFrame()
+			e.manageKeyboardEvents()
+			time.Sleep(time.Millisecond * 1000 / 60.0)
+		}
+
 		if e.stop {
 			break
 		}
 	}
+}
+
+func (e *Emulator) Reset() error {
+	e.reset = false
+
+	if e.bootRomEnabled {
+		err := e.loadBootRom(e.bootRomFilename)
+		if err != nil {
+			return err
+		}
+	} else {
+		e.initializeBootRomValues()
+	}
+
+	// Framebuffer set to black
+	for i, _ := range e.frameBuffer {
+		e.frameBuffer[i] = 0
+	}
+
+	err := e.loadRom(e.romFilename)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
