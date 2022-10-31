@@ -21,7 +21,7 @@ func main() {
 	// 06-ld r,r.gb
 	// 09-op r,r.gb
 	// 10-bit ops.gb
-	emulator, err := emulator.NewEmulator("./assets/roms/pokeblue.bin", "rom.sav", "")
+	emulator, err := emulator.NewEmulator("./assets/roms/gb-test-roms/cpu_instrs/individual/01-special.gb", "rom.sav", "")
 	if err != nil {
 		log.Fatal(err)
 	}
