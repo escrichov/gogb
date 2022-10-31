@@ -1,4 +1,4 @@
-package emulator_old
+package old_mains
 
 //
 //import (
@@ -296,8 +296,8 @@ package emulator_old
 //		return fmt.Errorf("incorrect rom size %d", len(e.rom0))
 //	}
 //
-//	e.romHeader.Title = parseRomTitle(e.rom0[0x134:0x144])
-//	e.romHeader.TitleBytes = e.rom0[0x134:0x144]
+//	e.romHeader.Title = parseRomTitle(e.rom0[0x134:0x143])
+//	e.romHeader.TitleBytes = e.rom0[0x134:0x143]
 //	e.romHeader.ColorGB = e.rom0[0x143]
 //	e.romHeader.LicenseCodeNew = string(e.rom0[0x144:0x146])
 //	e.romHeader.GBSGBIndicator = e.rom0[0x146]
@@ -308,7 +308,7 @@ package emulator_old
 //	e.romHeader.LicenseCodeOld = e.rom0[0x14B]
 //	e.romHeader.MaskROMVersionNumber = e.rom0[0x14C]
 //	e.romHeader.ComplementCheck = e.rom0[0x14D]
-//	e.romHeader.CheckSum = binary.BigEndian.Uint16(e.rom0[0x14E:0x150])
+//	e.romHeader.CheckSum = binary.BigEndian.Uint16(e.rom0[0x14D:0x14F])
 //
 //	switch e.romHeader.CartridgeType {
 //	case 0:
@@ -1649,8 +1649,8 @@ package emulator_old
 //	// Info Block
 //	data.WriteString("INFO")
 //	binary.Write(data, binary.LittleEndian, int32(0x12))
-//	data.Write(e.rom0[0x134:0x144]) // ROM (Title)
-//	data.Write(e.rom0[0x14E:0x150]) // ROM (Global checksum)
+//	data.Write(e.rom0[0x134:0x143]) // ROM (Title)
+//	data.Write(e.rom0[0x14D:0x14F]) // ROM (Global checksum)
 //
 //	// Core Block
 //	data.WriteString("CORE")
@@ -1766,9 +1766,9 @@ package emulator_old
 //	if err != nil {
 //		return err
 //	}
-//	romTitle := blockContent[:16]
+//	romTitle := string(blockContent[:16])
 //	romCheckSum := binary.BigEndian.Uint16(blockContent[16:])
-//	fmt.Println(blockName, blockSize, string(romTitle), romCheckSum)
+//	fmt.Println(blockName, blockSize, romTitle, romCheckSum)
 //
 //	// Core Block
 //	_, err = buffer.Read(blockNameTmp)
@@ -1942,17 +1942,11 @@ package emulator_old
 //			}
 //			fmt.Println(blockName, blockSize)
 //			break
-//		} else {
-//			blockContent = make([]byte, blockSize)
-//			_, err = buffer.Read(blockContent)
-//			if err != nil {
-//				return err
-//			}
 //		}
 //	}
 //
 //	// Extra checks
-//	if res := bytes.Compare(romTitle, e.romHeader.TitleBytes); res != 0 {
+//	if romTitle != string(e.romHeader.TitleBytes) {
 //		return fmt.Errorf("incorrect rom title: %v != %v", []byte(romTitle), []byte(e.romHeader.Title))
 //	}
 //
@@ -1984,7 +1978,7 @@ package emulator_old
 //		return fmt.Errorf("incorrect ram size: %d", ramSize)
 //	}
 //
-//	if vramSize != 0x2000 {
+//	if vramSize != 0x1000 {
 //		return fmt.Errorf("incorrect vram size: %d", vramSize)
 //	}
 //
@@ -2003,17 +1997,6 @@ package emulator_old
 //	if ObjectPalettesSize != 0x40 {
 //		return fmt.Errorf("incorrect object palettes size: %d", ObjectPalettesSize)
 //	}
-//
-//	// Set values
-//	e.cpu.PC = pc
-//	e.cpu.SetAF(af)
-//	e.cpu.SetBC(bc)
-//	e.cpu.SetDE(de)
-//	e.cpu.SetHL(hl)
-//	e.cpu.SetSP(sp)
-//	e.SetIF(ie)
-//	e.IME = ime
-//	e.halt = halt
 //
 //	return nil
 //}
@@ -2045,13 +2028,13 @@ package emulator_old
 //	//emulator, err := newEmulator("./assets/roms/gb-test-roms/cpu_instrs/individual/01-special.gb", "save10.bin")
 //	//emulator, err := newEmulator("./assets/roms/pokeblue.bin", "save11.bin", "./assets/roms/DMG_ROM.bin")
 //	//emulator, err := newEmulator("./assets/roms/gb-test-roms/cpu_instrs/individual/01-special.gb", "save10.bin", "")
-//	emulator, err := newEmulator("./assets/roms/pokeblue.bin", "s1.bin", "")
+//	emulator, err := newEmulator("./assets/roms/pokeblue.bin", "savetemp.bin", "")
 //	if err != nil {
 //		log.Fatal(err)
 //	}
 //	defer emulator.Destroy()
 //
-//	err = emulator.BessLoad("rom.s3")
+//	err = emulator.BessLoad("save.bess")
 //	if err != nil {
 //		log.Fatal(err)
 //	}

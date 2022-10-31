@@ -1,7 +1,14 @@
 package emulator
 
 import (
+	"bytes"
+	"fmt"
+	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
+	"image/jpeg"
+	"image/png"
+	"os"
+	"path/filepath"
 	"unsafe"
 )
 
@@ -59,4 +66,90 @@ func (e *Emulator) renderFrame() {
 	e.texture.Update(nil, framebufferBytes, WIDTH*4)
 	e.renderer.Copy(e.texture, nil, nil)
 	e.renderer.Present()
+}
+
+func pngToJpeg(inputPNG []byte) ([]byte, error) {
+	img, err := png.Decode(bytes.NewReader(inputPNG))
+	if err != nil {
+		return nil, err
+	}
+
+	buf := new(bytes.Buffer)
+	if err := jpeg.Encode(buf, img, nil); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func SaveJPGFromSurface(surface *sdl.Surface, filename string) error {
+	var imagePng = make([]byte, 10000)
+	rw, err := sdl.RWFromMem(imagePng)
+	if err != nil {
+		return err
+	}
+	defer rw.Close()
+
+	err = img.SavePNGRW(surface, rw, 0)
+	if err != nil {
+		return err
+	}
+
+	nTell, err := rw.Tell()
+	if err != nil {
+		return err
+	}
+
+	imageJpeg, err := pngToJpeg(imagePng[:nTell])
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(filename, imageJpeg, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *Emulator) TakeSnapshot(filename string) error {
+	w, h, err := e.renderer.GetOutputSize()
+	if err != nil {
+		return err
+	}
+
+	surface, err := sdl.CreateRGBSurface(0, w, h, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000)
+	if err != nil {
+		return err
+	}
+
+	err = e.renderer.ReadPixels(nil, sdl.PIXELFORMAT_ARGB8888, surface.Data(), int(surface.Pitch))
+	if err != nil {
+		return err
+	}
+
+	filenameExtension := filepath.Ext(filename)
+	if filenameExtension == ".bmp" {
+		err = surface.SaveBMP(filename)
+		if err != nil {
+			return err
+		}
+	} else if filenameExtension == ".png" {
+		err = img.SavePNG(surface, filename)
+		if err != nil {
+			return err
+		}
+	} else if filenameExtension == ".jpeg" || filenameExtension == ".jpg" {
+		err = SaveJPGFromSurface(surface, filename)
+		if err != nil {
+			return err
+		}
+	} else {
+		fmt.Errorf("file extension not recognized: %s", filenameExtension)
+	}
+
+	surface.Free()
+
+	return nil
 }

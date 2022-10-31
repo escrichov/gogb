@@ -1,4 +1,4 @@
-package main
+package old_mains
 
 import (
 	"emulator-go/emulator"

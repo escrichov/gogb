@@ -1,4 +1,4 @@
-package emulator_old
+package old_mains
 
 //import (
 //	"emulator-go/emulator/gb/utils"

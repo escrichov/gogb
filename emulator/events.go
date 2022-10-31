@@ -18,6 +18,8 @@ func (e *Emulator) manageKeyboardEvents() {
 				case sdl.K_v:
 					e.vsyncEnabled = !e.vsyncEnabled
 					e.renderer.RenderSetVSync(e.vsyncEnabled)
+				case sdl.K_p:
+					e.TakeSnapshot("snapshot.png")
 				case sdl.K_s:
 					e.BessStore("save.bess")
 				}
