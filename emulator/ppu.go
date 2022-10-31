@@ -34,7 +34,9 @@ func (e *Emulator) getColor(tile, yOffset, xOffset int) uint8 {
 	return ((tileData1>>xOffset)%2)*2 + (tileData>>xOffset)%2
 }
 
-func (e *Emulator) PPURun() {
+func (e *Emulator) PPURun() bool {
+	renderFrame := false
+
 	// PPU
 	div := e.GetDIV()
 	e.SetDIV(div + e.cycles - e.prevCycles)
@@ -139,8 +141,7 @@ func (e *Emulator) PPURun() {
 				if ly == (HEIGHT - 1) {
 					e.SetIF(e.GetIF() | 1)
 
-					e.renderFrame()
-					e.manageKeyboardEvents()
+					renderFrame = true
 				}
 
 				// Increment Line
@@ -152,4 +153,6 @@ func (e *Emulator) PPURun() {
 			e.ppuDot = 0
 		}
 	}
+
+	return renderFrame
 }

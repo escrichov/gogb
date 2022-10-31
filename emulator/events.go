@@ -1,6 +1,10 @@
 package emulator
 
-import "github.com/veandco/go-sdl2/sdl"
+import (
+	"fmt"
+	"github.com/veandco/go-sdl2/sdl"
+	"time"
+)
 
 func (e *Emulator) manageKeyboardEvents() {
 	// Manage Keyboard Events
@@ -18,10 +22,25 @@ func (e *Emulator) manageKeyboardEvents() {
 				case sdl.K_v:
 					e.vsyncEnabled = !e.vsyncEnabled
 					e.renderer.RenderSetVSync(e.vsyncEnabled)
+					var msg string
+					if e.vsyncEnabled {
+						msg = fmt.Sprintf("Vsync enabled")
+					} else {
+						msg = fmt.Sprintf("Vsync disabled")
+					}
+					e.SetMessage(msg, time.Second*3)
+				case sdl.K_f:
+					e.showFPS = !e.showFPS
 				case sdl.K_p:
-					e.TakeSnapshot("snapshot.png")
+					snapshotFile := "snapshot.png"
+					e.TakeSnapshot(snapshotFile)
+					msg := fmt.Sprintf("Snapshot saved: %s", snapshotFile)
+					e.SetMessage(msg, time.Second*3)
 				case sdl.K_s:
-					e.BessStore("save.bess")
+					stateFile := "save.bess"
+					e.BessStore(stateFile)
+					msg := fmt.Sprintf("State saved: %s", stateFile)
+					e.SetMessage(msg, time.Second*3)
 				}
 			}
 		case *sdl.QuitEvent:

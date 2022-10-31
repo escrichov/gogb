@@ -3,6 +3,8 @@ package emulator
 import (
 	"emulator-go/emulator-old/gb/utils"
 	"github.com/veandco/go-sdl2/sdl"
+	"github.com/veandco/go-sdl2/ttf"
+	"time"
 )
 
 const WIDTH = 160
@@ -33,12 +35,23 @@ type Emulator struct {
 
 	cpu CPU
 
-	window   *sdl.Window
-	renderer *sdl.Renderer
-	texture  *sdl.Texture
+	window                    *sdl.Window
+	renderer                  *sdl.Renderer
+	texture                   *sdl.Texture
+	font                      *ttf.Font
+	frames                    uint64
+	framesPerSecond           uint32
+	framesCurrentSecond       uint32
+	deltaTime                 uint64
+	millisecondsPreviousFrame uint64
+	consoleMessage            string
+	showMessage               bool
+	consoleMessageDuration    time.Duration
+	consoleMessageStart       time.Time
 
 	numInstructions      uint64
 	vsyncEnabled         bool
+	showFPS              bool
 	stop                 bool
 	bootRomEnabled       bool
 	romHeader            RomHeader
@@ -50,7 +63,9 @@ func NewEmulator(romFilename, saveFilename, bootRomFilename string) (*Emulator, 
 		ppuDot:       32,
 		rom1Pointer:  32768,
 		palette:      []int32{-1, -23197, -65536, -1 << 24, -1, -8092417, -12961132, -1 << 24},
-		vsyncEnabled: false,
+		vsyncEnabled: true,
+		showFPS:      false,
+		showMessage:  false,
 	}
 
 	if bootRomFilename == "" {
@@ -112,7 +127,11 @@ func (e *Emulator) Run() {
 			e.CPURun()
 		}
 
-		e.PPURun()
+		renderFrame := e.PPURun()
+		if renderFrame {
+			e.renderFrame()
+			e.manageKeyboardEvents()
+		}
 
 		if e.stop {
 			break
