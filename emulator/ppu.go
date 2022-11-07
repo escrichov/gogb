@@ -11,6 +11,14 @@ type LCDControl struct {
 	BgWindowEnablePriority bool // Bit 0, 0=Off, 1=On
 }
 
+func (e *Emulator) SetLY(value uint8) {
+	e.io[324] = value
+}
+
+func (e *Emulator) GetLY() uint8 {
+	return e.io[324]
+}
+
 func (e *Emulator) GetLCDC() *LCDControl {
 	return &e.lcdcControl
 }
@@ -38,9 +46,8 @@ func (e *Emulator) PPURun() bool {
 	renderFrame := false
 
 	// PPU
-	div := e.GetDIV()
-	e.SetDIV(div + e.cycles - e.prevCycles)
-	for ; e.prevCycles != e.cycles; e.prevCycles++ {
+	cyclesElapsed := e.cycles - e.prevCycles
+	for i := uint64(0); i < cyclesElapsed; i++ {
 		lcdc := e.GetLCDC()
 		if lcdc.LCDPPUEnable {
 			e.ppuDot++
@@ -139,7 +146,7 @@ func (e *Emulator) PPURun() bool {
 				}
 
 				if ly == (HEIGHT - 1) {
-					e.SetIF(e.GetIF() | 1)
+					e.SetInterruptVBlank()
 					renderFrame = true
 				}
 

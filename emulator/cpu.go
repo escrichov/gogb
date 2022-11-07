@@ -130,6 +130,7 @@ func (cpu *CPU) GetF() uint8 {
 }
 
 func (cpu *CPU) SetF(value uint8) {
+	value &= 0xF0
 	cpu.AF.SetLo(value)
 }
 
@@ -186,6 +187,7 @@ func (cpu *CPU) GetAF() uint16 {
 }
 
 func (cpu *CPU) SetAF(value uint16) {
+	value &= 0xFFF0
 	cpu.AF.Set(value)
 }
 
@@ -372,7 +374,6 @@ func (e *Emulator) r8Set(number uint8, val uint8) {
 
 func (e *Emulator) tick() {
 	e.cycles += 4
-	e.totalCycles += 4
 }
 
 func (e *Emulator) push(val uint16) {
@@ -392,29 +393,4 @@ func (e *Emulator) pop() uint16 {
 	e.cpu.SetSP(sp + 2)
 
 	return result
-}
-
-func (e *Emulator) SetIF(value uint8) {
-	e.io[271] = value
-}
-
-func (e *Emulator) GetIF() uint8 {
-	return e.io[271]
-}
-
-func (e *Emulator) SetLY(value uint8) {
-	e.io[324] = value
-}
-
-func (e *Emulator) GetLY() uint8 {
-	return e.io[324]
-}
-
-func (e *Emulator) SetDIV(value uint16) {
-	e.io[260] = uint8(value >> 8)
-	e.io[259] = uint8(value & 0xFF)
-}
-
-func (e *Emulator) GetDIV() uint16 {
-	return uint16(e.io[260])<<8 | uint16(e.io[259])
 }

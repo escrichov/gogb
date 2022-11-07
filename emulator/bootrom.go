@@ -19,16 +19,32 @@ func (e *Emulator) loadBootRom(fileName string) error {
 
 func (e *Emulator) initializeBootRomValues() {
 	e.cpu.PC = 256
+	e.cpu.SetSP(0xfffe)
+	e.cpu.SetA(0x01)
+	e.cpu.SetF(0xb0)
+	e.cpu.SetB(0x00)
+	e.cpu.SetC(0x13)
+	e.cpu.SetD(0x00)
+	e.cpu.SetE(0xd8)
+	e.cpu.SetH(0x01)
+	e.cpu.SetL(0x4d)
+
+	e.IME = 0
 	e.SetLCDC(145)
 	e.SetLY(0)
 	e.SetDIV(44032)
-	e.cpu.SetSP(65534)
-	e.cpu.SetA(1)
-	e.cpu.SetF(176)
-	e.cpu.SetB(19)
-	e.cpu.SetC(0)
-	e.cpu.SetD(0)
-	e.cpu.SetE(216)
-	e.cpu.SetH(1)
-	e.cpu.SetL(77)
+
+	//e.cpu.PC = 256
+	//e.SetLCDC(145)
+	//e.SetLY(0)
+	//e.SetDIV(44032)
+	//e.cpu.SetSP(0xfffe)
+	//e.cpu.SetA(0x11)
+	//e.cpu.SetF(0x80)
+	//e.cpu.SetB(0x00)
+	//e.cpu.SetC(0x00)
+	//e.cpu.SetD(0xff)
+	//e.cpu.SetE(0x56)
+	//e.cpu.SetH(0x00)
+	//e.cpu.SetL(0x0d)
 }

@@ -14,15 +14,18 @@ import (
 	"unsafe"
 )
 
-func (e *Emulator) initializeSDL(windowName string, windowScale float64) error {
+func (e *Emulator) initializeSDL(windowName, fontFilename string, windowScale float64) error {
 	var err error
 
 	// SDL Initialization
-	var subsystemMask uint32 = sdl.INIT_VIDEO | sdl.INIT_AUDIO
-	if sdl.WasInit(subsystemMask) != subsystemMask {
-		if err := sdl.Init(subsystemMask); err != nil {
-			return err
-		}
+	//var subsystemMask uint32 = sdl.INIT_VIDEO | sdl.INIT_AUDIO
+	//if sdl.WasInit(subsystemMask) != subsystemMask {
+	//	if err := sdl.Init(subsystemMask); err != nil {
+	//		return err
+	//	}
+	//}
+	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
+		return err
 	}
 
 	// Initialize SDL TTF
@@ -30,20 +33,39 @@ func (e *Emulator) initializeSDL(windowName string, windowScale float64) error {
 		return err
 	}
 
-	e.window, err = sdl.CreateWindow(
-		windowName,
-		sdl.WINDOWPOS_CENTERED,
-		sdl.WINDOWPOS_CENTERED,
-		int32(WIDTH*windowScale),
-		int32(HEIGHT*windowScale),
-		sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL)
-	if err != nil {
-		return err
-	}
+	if e.showWindow {
+		e.window, err = sdl.CreateWindow(
+			windowName,
+			sdl.WINDOWPOS_CENTERED,
+			sdl.WINDOWPOS_CENTERED,
+			int32(WIDTH*windowScale),
+			int32(HEIGHT*windowScale),
+			sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL)
+		if err != nil {
+			return err
+		}
 
-	e.renderer, err = sdl.CreateRenderer(e.window, -1, sdl.RENDERER_PRESENTVSYNC|sdl.RENDERER_ACCELERATED)
-	if err != nil {
-		return err
+		e.renderer, err = sdl.CreateRenderer(e.window, -1, sdl.RENDERER_PRESENTVSYNC|sdl.RENDERER_ACCELERATED)
+		if err != nil {
+			return err
+		}
+	} else {
+		e.surface, err = sdl.CreateRGBSurface(
+			0,
+			int32(WIDTH*windowScale),
+			int32(HEIGHT*windowScale),
+			32,
+			0x00ff0000,
+			0x0000ff00,
+			0x000000ff,
+			0xff000000)
+		if err != nil {
+			return err
+		}
+		e.renderer, err = sdl.CreateSoftwareRenderer(e.surface)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Creating a SDL texture that is used to display the color buffer
@@ -61,7 +83,7 @@ func (e *Emulator) initializeSDL(windowName string, windowScale float64) error {
 	e.keyboardState = sdl.GetKeyboardState()
 
 	// Font
-	e.font, err = ttf.OpenFont("assets/fonts/arial.ttf", 25)
+	e.font, err = ttf.OpenFont(fontFilename, 25)
 	if err != nil {
 		return err
 	}

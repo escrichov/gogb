@@ -1,7 +1,6 @@
 package emulator
 
 import (
-	"emulator-go/emulator-old/gb/utils"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 	"time"
@@ -11,8 +10,7 @@ const WIDTH = 160
 const HEIGHT = 144
 
 type Emulator struct {
-	cycles, prevCycles uint16
-	totalCycles        uint64
+	cycles, prevCycles uint64
 
 	IME  uint8
 	halt uint8
@@ -30,18 +28,26 @@ type Emulator struct {
 	bootRom           []byte
 	extrambankPointer uint32
 	rom1Pointer       uint32
+	mbc1MemoryModel   int
+	mbc1EnableRamBank bool
 	keyboardState     []uint8
 	frameBuffer       [WIDTH * HEIGHT]int32
 	lcdcControl       LCDControl
+
+	// Timers
+	divTimer  uint16
+	timaTimer int
 
 	palette []int32
 
 	cpu CPU
 
 	window                    *sdl.Window
+	surface                   *sdl.Surface
 	renderer                  *sdl.Renderer
 	texture                   *sdl.Texture
 	font                      *ttf.Font
+	showWindow                bool
 	frames                    uint64
 	framesPerSecond           uint32
 	framesCurrentSecond       uint32
@@ -63,16 +69,16 @@ type Emulator struct {
 	memoryBankController int
 }
 
-func NewEmulator(romFilename, saveFilename, bootRomFilename string) (*Emulator, error) {
+func NewEmulator(romFilename, saveFilename, bootRomFilename, fontFilename string, showWindow bool) (*Emulator, error) {
 	emulator := Emulator{
 		ppuDot:          32,
-		rom1Pointer:     32768,
 		palette:         []int32{-1, -23197, -65536, -1 << 24, -1, -8092417, -12961132, -1 << 24},
 		vsyncEnabled:    true,
 		showFPS:         false,
 		showMessage:     false,
 		romFilename:     romFilename,
 		bootRomFilename: bootRomFilename,
+		showWindow:      showWindow,
 	}
 
 	if bootRomFilename == "" {
@@ -96,7 +102,7 @@ func NewEmulator(romFilename, saveFilename, bootRomFilename string) (*Emulator, 
 		return nil, err
 	}
 
-	err = emulator.initializeSDL(utils.ToCamel(emulator.romHeader.Title), 4)
+	err = emulator.initializeSDL(ToCamel(emulator.romHeader.Title), fontFilename, 4)
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +122,43 @@ func (e *Emulator) Destroy() {
 	sdl.Quit()
 }
 
+func (e *Emulator) RunTest(numCycles uint64) {
+	e.stop = false
+	for {
+		e.prevCycles = e.cycles
+		if e.hastToManageInterrupts() {
+			e.manageInterrupts()
+		} else if e.halt != 0 {
+			e.tick()
+			if e.hasPendingInterrupts() {
+				e.halt = 0
+			}
+		} else {
+			e.CPURun()
+		}
+
+		e.incrementTimers()
+
+		renderFrame := e.PPURun()
+		if renderFrame {
+			e.renderFrame()
+		}
+
+		// Paused state
+		for e.pause {
+			e.renderFrame()
+		}
+
+		if e.stop {
+			break
+		}
+
+		if numCycles != 0 && e.cycles >= numCycles {
+			break
+		}
+	}
+}
+
 func (e *Emulator) Run() {
 	e.stop = false
 	for {
@@ -124,22 +167,18 @@ func (e *Emulator) Run() {
 		}
 
 		e.prevCycles = e.cycles
-		if (e.IME & e.GetIF() & e.io[511]) != 0 {
-			e.SetIF(0)
-			e.halt = 0
-			e.IME = 0
-			e.tick()
-			e.tick()
-			e.push(e.cpu.PC)
-			e.cpu.PC = 64
-
-			e.loadGamesharkCodes()
-
+		if e.hastToManageInterrupts() {
+			e.manageInterrupts()
 		} else if e.halt != 0 {
 			e.tick()
+			if e.hasPendingInterrupts() {
+				e.halt = 0
+			}
 		} else {
 			e.CPURun()
 		}
+
+		e.incrementTimers()
 
 		renderFrame := e.PPURun()
 		if renderFrame {
