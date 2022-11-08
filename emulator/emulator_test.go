@@ -226,3 +226,183 @@ func TestBlargg_11_op_a_hl(t *testing.T) {
 		100000000,
 	)
 }
+
+func TestMooneye_acceptance_bits_mem_oam(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/bits/mem_oam.gb",
+		"../screenshots/tests/mooneye/bits/mem_oam.png",
+		1000000,
+	)
+}
+
+func TestMooneye_acceptance_bits_reg_f(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/bits/reg_f.gb",
+		"../screenshots/tests/mooneye/bits/reg_f.png",
+		1000000,
+	)
+}
+
+func TestMooneye_acceptance_bits_unused_hwio_gs(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/bits/unused_hwio-GS.gb",
+		"../screenshots/tests/mooneye/bits/unused_hwio-GS.png",
+		1000000,
+	)
+}
+
+func TestMooneye_acceptance_instr_daa(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/instr/daa.gb",
+		"../screenshots/tests/mooneye/instr/daa.png",
+		10000000,
+	)
+}
+
+func TestMooneye_acceptance_interrupts_ie_push(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/interrupts/ie_push.gb",
+		"../screenshots/tests/mooneye/interrupts/ie_push.png",
+		10000000,
+	)
+}
+
+func TestMooneye_acceptance_oam_dma_basic(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/oam_dma/basic.gb",
+		"../screenshots/tests/mooneye/oam_dma/basic.png",
+		10000000,
+	)
+}
+
+func TestMooneye_acceptance_oam_dma_reg_read(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/oam_dma/reg_read.gb",
+		"../screenshots/tests/mooneye/oam_dma/reg_read.png",
+		10000000,
+	)
+}
+
+func TestMooneye_acceptance_oam_dma_sources_GS(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/oam_dma/sources-GS.gb",
+		"../screenshots/tests/mooneye/oam_dma/sources-GS.png",
+		10000000,
+	)
+}
+
+func TestMooneye_acceptance_timer_div_write(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/timer/div_write.gb",
+		"../screenshots/tests/mooneye/timer/div_write.png",
+		100000000,
+	)
+}
+
+func TestMooneye_acceptance_timer_rapid_toggle(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/timer/rapid_toggle.gb",
+		"../screenshots/tests/mooneye/timer/rapid_toggle.png",
+		100000000,
+	)
+}
+
+func TestMooneye_acceptance_timer_tim00(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/timer/tim00.gb",
+		"../screenshots/tests/mooneye/timer/tim00.png",
+		1000000,
+	)
+}
+
+func TestMooneye_acceptance_timer_tim01(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/timer/tim01.gb",
+		"../screenshots/tests/mooneye/timer/tim01.png",
+		1000000,
+	)
+}
+
+func TestMooneye_acceptance_timer_tim01_div_trigger(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/timer/tim01_div_trigger.gb",
+		"../screenshots/tests/mooneye/timer/tim01_div_trigger.png",
+		1000000,
+	)
+}
+
+func TestMooneye_acceptance_timer_tim10(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/timer/tim10.gb",
+		"../screenshots/tests/mooneye/timer/tim10.png",
+		1000000,
+	)
+}
+
+func TestMooneye_acceptance_timer_tim10_div_trigger(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/timer/tim10_div_trigger.gb",
+		"../screenshots/tests/mooneye/timer/tim10_div_trigger.png",
+		1000000,
+	)
+}
+
+func TestMooneye_acceptance_timer_tim11(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/timer/tim11.gb",
+		"../screenshots/tests/mooneye/timer/tim11.png",
+		1000000,
+	)
+}
+
+func TestMooneye_acceptance_timer_tim11_div_trigger(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/timer/tim11_div_trigger.gb",
+		"../screenshots/tests/mooneye/timer/tim11_div_trigger.png",
+		1000000,
+	)
+}
+
+func TestMooneye_acceptance_timer_tima_reload(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/timer/tima_reload.gb",
+		"../screenshots/tests/mooneye/timer/tima_reload.png",
+		1000000,
+	)
+}
+
+func TestMooneye_acceptance_timer_tima_write_reloading(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/timer/tima_write_reloading.gb",
+		"../screenshots/tests/mooneye/timer/tima_write_reloading.png",
+		1000000,
+	)
+}
+
+func TestMooneye_acceptance_timer_tma_write_reloading(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mooneye/acceptance/timer/tma_write_reloading.gb",
+		"../screenshots/tests/mooneye/timer/tma_write_reloading.png",
+		1000000,
+	)
+}

@@ -24,6 +24,8 @@ func (e *Emulator) CPURun() {
 	case 8: // LD (u16), SP
 		e.write16(e.popPC16(), e.cpu.GetSP())
 	case 16: // STOP
+		// TODO: improve stop
+		// Timing is 1 Cycle
 		e.halt = 1
 		e.popPC()
 	case 24: // JR (unconditional)
