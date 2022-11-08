@@ -20,7 +20,7 @@ func main() {
 	// 10-bit ops.gb
 	// 11-op a,(hl).gb
 	emulator, err := emulator.NewEmulator(
-		"./assets/roms/mooneye/emulator-only/mbc1/rom_512kb.gb",
+		"./assets/roms/zelda.gb",
 		//"./assets/roms/pokeblue.gb",
 		"rom.sav",
 		//"./assets/roms/bootroms/DMG_ROM.bin",
