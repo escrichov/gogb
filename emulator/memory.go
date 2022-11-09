@@ -199,10 +199,31 @@ func (e *Emulator) mem8(addr uint16, val uint8, write bool) uint8 {
 				case 0xFF02: // SC: Serial transfer control
 					val |= 0b01111110 // Unused bits returns 1s
 				case 0xFF04: // DIV
+					// When writing to DIV, if the current output is 1 and timer is enabled,
+					// as the new value after reseting DIV will be 0,
+					// the falling edge detector will detect a falling edge and TIMA will increase.
+					timerControl := e.GetTAC()
+					if timerControl.TimerEnable {
+						if timerControl.ClockFrequency == 1024 && GetBit16(e.divTimer, 9) {
+							e.io[261]++
+						} else if timerControl.ClockFrequency == 16 && GetBit(uint8(e.divTimer), 3) {
+							e.io[261]++
+						} else if timerControl.ClockFrequency == 64 && GetBit(uint8(e.divTimer), 5) {
+							e.io[261]++
+						} else if timerControl.ClockFrequency == 256 && GetBit(uint8(e.divTimer), 7) {
+							e.io[261]++
+						}
+					}
+
+					// Reset Div timer
 					val = 0
 					e.divTimer = 0
+
+					// When writing to DIV, the whole counter is reset, so the timer is also affected.
+					e.timaTimer = int(e.io[261]) * timerControl.ClockFrequency
 				case 0xFF05: // TIMA
-					e.timaTimer = int(val)
+					timerControl := e.GetTAC()
+					e.timaTimer = int(val) * timerControl.ClockFrequency
 				case 0xFF07: // TAC: Timer Control
 					val |= 0b11111000 // Unused bits returns 1s
 				case 0xFF0F: // IF

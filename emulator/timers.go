@@ -1,18 +1,12 @@
 package emulator
 
-type InputClockSelectType int
-
-const (
-	InputClockSelect0 InputClockSelectType = 0
-	InputClockSelect1 InputClockSelectType = 1
-	InputClockSelect2 InputClockSelectType = 2
-	InputClockSelect3 InputClockSelectType = 3
-)
-
 type TimerControl struct {
-	TimerEnable      bool
-	InputClockSelect InputClockSelectType
-	ClockFrequency   int
+	TimerEnable    bool
+	ClockFrequency int
+}
+
+func (e *Emulator) SetInternalDIV(value uint32) {
+	e.internalDivider = value
 }
 
 // SetDIV Set Internal divider counter
@@ -58,16 +52,12 @@ func (e *Emulator) GetTAC() TimerControl {
 	}
 	switch tac & 0x3 {
 	case 0:
-		timerControl.InputClockSelect = InputClockSelect0
 		timerControl.ClockFrequency = 1024
 	case 1:
-		timerControl.InputClockSelect = InputClockSelect1
 		timerControl.ClockFrequency = 16
 	case 2:
-		timerControl.InputClockSelect = InputClockSelect2
 		timerControl.ClockFrequency = 64
 	case 3:
-		timerControl.InputClockSelect = InputClockSelect3
 		timerControl.ClockFrequency = 256
 	}
 
