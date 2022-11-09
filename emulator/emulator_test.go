@@ -835,7 +835,7 @@ func TestMooneye_acceptance_timer_rapid_toggle(t *testing.T) {
 		t,
 		"../assets/roms/mooneye/acceptance/timer/rapid_toggle.gb",
 		"../screenshots/tests/mooneye/timer/rapid_toggle.png",
-		100000000,
+		1000000,
 	)
 }
 

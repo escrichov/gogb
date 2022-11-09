@@ -74,7 +74,7 @@ func (e *Emulator) getInterruptType() uint16 {
 }
 
 func (e *Emulator) manageInterrupts() {
-
+	interruptType := e.getInterruptType()
 	e.halt = 0
 
 	// The IF bit corresponding to this interrupt and the IME flag are reset by the CPU
@@ -89,7 +89,6 @@ func (e *Emulator) manageInterrupts() {
 	e.push(e.cpu.PC)
 
 	// The PC register is set to the address of the handler (one of: $40, $48, $50, $58, $60). This consumes one last M-cycle.
-	interruptType := e.getInterruptType()
 	e.cpu.PC = interruptType
 
 	if interruptType == InterruptVBlank {

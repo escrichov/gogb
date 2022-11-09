@@ -32,7 +32,8 @@ func (e *Emulator) initializeBootRomValues() {
 	e.IME = 0
 	e.SetLCDC(145)
 	e.SetLY(0)
-	e.SetDIV(44032)
+	e.SetDIV(0xab)
+	e.SetInternalTimer(0xabcc) // Or 0xabc4 if not initialized in 8 cycles at startup
 
 	//e.cpu.PC = 256
 	//e.SetLCDC(145)

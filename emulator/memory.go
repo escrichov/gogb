@@ -174,7 +174,7 @@ func (e *Emulator) mem8(addr uint16, val uint8, write bool) uint8 {
 	e.tick()
 
 	if addr == 0xD800 {
-		val = 00
+		//val = 00
 		fmt.Println("ENTRA")
 	}
 
@@ -202,30 +202,23 @@ func (e *Emulator) mem8(addr uint16, val uint8, write bool) uint8 {
 					// When writing to DIV, if the current output is 1 and timer is enabled,
 					// as the new value after reseting DIV will be 0,
 					// the falling edge detector will detect a falling edge and TIMA will increase.
-					timerControl := e.GetTAC()
-					if timerControl.TimerEnable {
-						if timerControl.ClockFrequency == 1024 && GetBit16(e.divTimer, 9) {
-							e.io[261]++
-						} else if timerControl.ClockFrequency == 16 && GetBit(uint8(e.divTimer), 3) {
-							e.io[261]++
-						} else if timerControl.ClockFrequency == 64 && GetBit(uint8(e.divTimer), 5) {
-							e.io[261]++
-						} else if timerControl.ClockFrequency == 256 && GetBit(uint8(e.divTimer), 7) {
-							e.io[261]++
-						}
+					if e.isFallingEdgeWritingDIV() {
+						e.increaseTIMA(1)
 					}
 
 					// Reset Div timer
 					val = 0
-					e.divTimer = 0
-
-					// When writing to DIV, the whole counter is reset, so the timer is also affected.
-					e.timaTimer = int(e.io[261]) * timerControl.ClockFrequency
-				case 0xFF05: // TIMA
-					timerControl := e.GetTAC()
-					e.timaTimer = int(val) * timerControl.ClockFrequency
+					e.internalTimer = 0
 				case 0xFF07: // TAC: Timer Control
 					val |= 0b11111000 // Unused bits returns 1s
+					// When writing to TAC, if the previously selected multiplexer input was 1
+					// and the new input is 0, TIMA will increase too.
+					// This doesn't happen when the timer is disabled,
+					// but it also happens when disabling the timer
+					// (the same effect as writing to DIV).
+					if e.isFallingEdgeWritingTAC(val) {
+						e.increaseTIMA(1)
+					}
 				case 0xFF0F: // IF
 					val |= 0b11100000 // Unused bits returns 1s
 				case 0xFF10: // Audio NR10: Channel 1 sweep

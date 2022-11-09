@@ -35,8 +35,7 @@ type Emulator struct {
 	lcdcControl       LCDControl
 
 	// Timers
-	divTimer  uint16
-	timaTimer int
+	internalTimer uint16
 
 	palette []int32
 
@@ -79,6 +78,7 @@ func NewEmulator(romFilename, saveFilename, bootRomFilename, fontFilename string
 		romFilename:     romFilename,
 		bootRomFilename: bootRomFilename,
 		showWindow:      showWindow,
+		internalTimer:   8,
 	}
 
 	if bootRomFilename == "" {

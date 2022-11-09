@@ -6,7 +6,7 @@ import (
 )
 
 func (e *Emulator) PrintRegisters() {
-	registers := fmt.Sprintf("AF: %x (%s)\nBC: %x\nDE: %x\nHL: %x\nSP: %x\nPC: %x\n",
+	registers := fmt.Sprintf("Registers\n\tAF: %x (%s)\n\tBC: %x\n\tDE: %x\n\tHL: %x\n\tSP: %x\n\tPC: %x\n",
 		e.cpu.AF.value,
 		e.GetDebugFlags(),
 		e.cpu.BC.value,
@@ -44,4 +44,11 @@ func (e *Emulator) GetDebugFlags() string {
 	}
 
 	return flags.String()
+}
+
+func (e *Emulator) PrintTimers() {
+	timers := fmt.Sprintf("Timers\n\tDIV: %x\n\tTAC: %x\n\tTIMA: %x\n\tTMA: %x\n\tInternal Timer: %x\n",
+		e.GetDIV(), e.io[263], e.GetTIMA(), e.GetTMA(), e.internalTimer,
+	)
+	fmt.Println(timers)
 }
