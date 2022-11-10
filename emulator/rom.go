@@ -16,11 +16,11 @@ type RomHeader struct {
 	GBSGBIndicator       uint8
 	CartridgeType        uint8
 	RomSizeByte          uint8
-	RomBanks             uint8
+	RomBanks             uint16
 	RomSize              int
 	RamSizeByte          uint8
 	RamSize              int
-	RamBanks             uint8
+	RamBanks             uint16
 	DestinationCode      uint8
 	LicenseCodeOld       uint8
 	MaskROMVersionNumber uint8
@@ -153,7 +153,7 @@ func (e *Emulator) parseRomHeader() error {
 
 	// ROM
 	e.romHeader.RomSize = 32768 * (1 << e.romHeader.RomSizeByte)
-	e.romHeader.RomBanks = uint8(e.romHeader.RomSize / 16384)
+	e.romHeader.RomBanks = uint16(e.romHeader.RomSize / 16384)
 
 	// RAM
 	switch e.romHeader.RamSizeByte {
@@ -206,6 +206,8 @@ func (e *Emulator) parseRomHeader() error {
 		if e.romHeader.RamSize >= 32768 {
 			e.mbc1AllowedRamBank2 = true
 		}
+	} else if e.memoryBankController == 2 {
+		e.mbc2RomBank = 1
 	}
 
 	e.PrintCartridge()

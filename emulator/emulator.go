@@ -40,9 +40,18 @@ type Emulator struct {
 	mbc1AllowedRomBank2 bool
 	mbc1AllowedRamBank2 bool
 	mbc1IsMBC1M         bool
-	keyboardState       []uint8
-	frameBuffer         [WIDTH * HEIGHT]int32
-	lcdcControl         LCDControl
+
+	mbc2RomBank       uint8
+	mbc2EnableRamBank bool
+
+	mbc5RomBank       uint16
+	mbc5RamBank       uint8
+	mbc5EnableRamBank bool
+	mbc5EnableRumble  bool
+
+	keyboardState []uint8
+	frameBuffer   [WIDTH * HEIGHT]int32
+	lcdcControl   LCDControl
 
 	// Timers
 	internalTimer                  uint16

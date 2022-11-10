@@ -1424,7 +1424,7 @@ func TestMooneye_emulator_only_mbc2_bits_ramg(t *testing.T) {
 		t,
 		"../assets/roms/mooneye/emulator-only/mbc2/bits_ramg.gb",
 		"../screenshots/tests/mooneye/emulator-only/mbc2/bits_ramg.png",
-		10000000,
+		100000000,
 	)
 }
 
@@ -1433,7 +1433,7 @@ func TestMooneye_emulator_only_mbc2_bits_romb(t *testing.T) {
 		t,
 		"../assets/roms/mooneye/emulator-only/mbc2/bits_romb.gb",
 		"../screenshots/tests/mooneye/emulator-only/mbc2/bits_romb.png",
-		10000000,
+		100000000,
 	)
 }
 
@@ -1442,7 +1442,7 @@ func TestMooneye_emulator_only_mbc2_bits_unused(t *testing.T) {
 		t,
 		"../assets/roms/mooneye/emulator-only/mbc2/bits_unused.gb",
 		"../screenshots/tests/mooneye/emulator-only/mbc2/bits_unused.png",
-		10000000,
+		100000000,
 	)
 }
 
@@ -1460,7 +1460,7 @@ func TestMooneye_emulator_only_mbc2_rom_1Mb(t *testing.T) {
 		t,
 		"../assets/roms/mooneye/emulator-only/mbc2/rom_1Mb.gb",
 		"../screenshots/tests/mooneye/emulator-only/mbc2/rom_1Mb.png",
-		10000000,
+		1000000,
 	)
 }
 
@@ -1469,7 +1469,7 @@ func TestMooneye_emulator_only_mbc2_rom_2Mb(t *testing.T) {
 		t,
 		"../assets/roms/mooneye/emulator-only/mbc2/rom_2Mb.gb",
 		"../screenshots/tests/mooneye/emulator-only/mbc2/rom_2Mb.png",
-		10000000,
+		1000000,
 	)
 }
 
@@ -1478,7 +1478,7 @@ func TestMooneye_emulator_only_mbc2_rom_512kb(t *testing.T) {
 		t,
 		"../assets/roms/mooneye/emulator-only/mbc2/rom_512kb.gb",
 		"../screenshots/tests/mooneye/emulator-only/mbc2/rom_512kb.png",
-		10000000,
+		1000000,
 	)
 }
 
@@ -1496,7 +1496,7 @@ func TestMooneye_emulator_only_mbc5_rom_1Mb(t *testing.T) {
 		t,
 		"../assets/roms/mooneye/emulator-only/mbc5/rom_1Mb.gb",
 		"../screenshots/tests/mooneye/emulator-only/mbc5/rom_1Mb.png",
-		10000000,
+		1000000000,
 	)
 }
 
@@ -1532,7 +1532,7 @@ func TestMooneye_emulator_only_mbc5_rom_512kb(t *testing.T) {
 		t,
 		"../assets/roms/mooneye/emulator-only/mbc5/rom_512kb.gb",
 		"../screenshots/tests/mooneye/emulator-only/mbc5/rom_512kb.png",
-		10000000,
+		100000000,
 	)
 }
 
