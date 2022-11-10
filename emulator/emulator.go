@@ -26,18 +26,23 @@ type Emulator struct {
 	romFilename     string
 	bootRomFilename string
 
-	io                [0x200]uint8
-	extrambank        *[0x8000]uint8
-	ppuDot            int
-	rom0              []byte
-	bootRom           []byte
-	extrambankPointer uint32
-	rom1Pointer       uint32
-	mbc1MemoryModel   int
-	mbc1EnableRamBank bool
-	keyboardState     []uint8
-	frameBuffer       [WIDTH * HEIGHT]int32
-	lcdcControl       LCDControl
+	io                  [0x200]uint8
+	extrambank          *[0x8000]uint8
+	ppuDot              int
+	rom0                []byte
+	bootRom             []byte
+	extrambankPointer   uint32
+	rom1Pointer         uint32
+	mbc1Bank1           uint8
+	mbc1Bank2           uint8
+	mbc1MemoryModel     int
+	mbc1EnableRamBank   bool
+	mbc1AllowedRomBank2 bool
+	mbc1AllowedRamBank2 bool
+	mbc1IsMBC1M         bool
+	keyboardState       []uint8
+	frameBuffer         [WIDTH * HEIGHT]int32
+	lcdcControl         LCDControl
 
 	// Timers
 	internalTimer                  uint16

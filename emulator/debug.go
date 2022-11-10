@@ -52,3 +52,27 @@ func (e *Emulator) PrintTimers() {
 	)
 	fmt.Println(timers)
 }
+
+func (e *Emulator) PrintCartridge() {
+	cartridge := fmt.Sprintf(
+		"Cartridge\n\t"+
+			"Title: %s\n\t"+
+			"Cartridge Type: %s (%d)\n\t"+
+			"MBC: %d\n\t"+
+			"Rom Size: %d\n\t"+
+			"Rom Banks: %d (16KiB each)\n\t"+
+			"Ram Size: %d\n\t"+
+			"Ram Banks: %d (8KiB each)\n\t"+
+			"CGB flag: %x\n",
+		e.romHeader.Title,
+		e.romHeader.CartridgeTypeName,
+		e.romHeader.CartridgeType,
+		e.memoryBankController,
+		e.romHeader.RomSize,
+		e.romHeader.RomBanks,
+		e.romHeader.RamSize,
+		e.romHeader.RamBanks,
+		e.romHeader.ColorGB,
+	)
+	fmt.Println(cartridge)
+}
