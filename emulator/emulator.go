@@ -12,8 +12,13 @@ const HEIGHT = 144
 type Emulator struct {
 	cycles, prevCycles uint64
 
-	IME  uint8
-	halt uint8
+	IME                                    uint8
+	delayedActivateIMEatInstruction        uint64
+	halt                                   uint8
+	isInterruptPendingInFirstHaltExecution bool
+	isIMEDelayedInFirstHaltExecution       bool
+	isHaltBugActive                        bool
+	isHaltBugEIActive                      bool
 
 	workRam  [0x4000]uint8
 	videoRam [0x2000]uint8
@@ -35,7 +40,8 @@ type Emulator struct {
 	lcdcControl       LCDControl
 
 	// Timers
-	internalTimer uint16
+	internalTimer                  uint16
+	timaUpdateWithTMADelayedCycles uint64
 
 	palette []int32
 
@@ -129,10 +135,7 @@ func (e *Emulator) RunTest(numCycles uint64) {
 		if e.hastToManageInterrupts() {
 			e.manageInterrupts()
 		} else if e.halt != 0 {
-			e.tick()
-			if e.hasPendingInterrupts() {
-				e.halt = 0
-			}
+			e.HaltRun()
 		} else {
 			e.CPURun()
 		}
@@ -170,10 +173,7 @@ func (e *Emulator) Run() {
 		if e.hastToManageInterrupts() {
 			e.manageInterrupts()
 		} else if e.halt != 0 {
-			e.tick()
-			if e.hasPendingInterrupts() {
-				e.halt = 0
-			}
+			e.HaltRun()
 		} else {
 			e.CPURun()
 		}

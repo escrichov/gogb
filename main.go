@@ -20,10 +20,10 @@ func main() {
 	// 10-bit ops.gb
 	// 11-op a,(hl).gb
 	emulator, err := emulator.NewEmulator(
-		"./assets/roms/zelda.gb",
+		"./assets/roms/halt_tests.gb",
 		//"./assets/roms/pokeblue.gb",
 		"rom.sav",
-		//"./assets/roms/bootroms/DMG_ROM.bin",
+		//"./assets/roms/bootroms/dmg_boot.bin",
 		"",
 		"./assets/fonts/arial.ttf",
 		true)

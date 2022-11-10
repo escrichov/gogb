@@ -123,18 +123,34 @@ func (e *Emulator) updateTIMA(cyclesElapsed uint16) {
 	if timerControl.TimerEnable {
 		increases := numDetectFallingEdges(e.internalTimer, e.internalTimer+cyclesElapsed, timerControl.ClockFrequency)
 
-		e.increaseTIMA(increases)
+		e.increaseTIMA(increases, true)
 	}
 }
 
-func (e *Emulator) increaseTIMA(increases uint8) {
+func (e *Emulator) increaseTIMA(increases uint8, delayTimaReloadAndInterrupt bool) {
 	tima := e.GetTIMA()
 	newTima := tima + increases
 	if uint16(tima)+uint16(increases) > 0xFF {
-		newTima = e.GetTMA()
-		e.SetInterruptTimer()
+		// When TIMA overflows, the value from TMA is loaded and IF timer flag is set to 1,
+		// but this doesn't happen immediately.
+		// Timer interrupt is delayed 1 cycle (4 clocks) from the TIMA overflow.
+		// The TMA reload to TIMA is also delayed. For one cycle, after overflowing TIMA,
+		// the value in TIMA is 00h, not TMA.
+		if delayTimaReloadAndInterrupt {
+			newTima = 0
+			e.timaUpdateWithTMADelayedCycles = e.cycles + 4*4
+		} else {
+			newTima = e.GetTMA()
+			e.requestInterruptTimer()
+		}
 	}
 	e.SetTIMA(newTima)
+}
+
+func (e *Emulator) reloadTIMAwithTMA() {
+	newTima := e.GetTMA()
+	e.SetTIMA(newTima)
+	e.requestInterruptTimer()
 }
 
 func (e *Emulator) incrementTimers() {

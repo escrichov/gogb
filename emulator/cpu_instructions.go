@@ -8,11 +8,37 @@ func (e *Emulator) instRet() {
 	addr := e.pop()
 	e.cpu.PC = addr
 	e.tick()
+
+	// Return to halt after interrupt
+	// The behavior is different when ei (whose effect is typically delayed by one instruction)
+	// is followed immediately by a halt, and an interrupt is pending as the halt is executed.
+	// The interrupt is serviced and the handler called,
+	// but the interrupt returns to the halt, which is executed again,
+	// and thus waits for another interrupt.
+	if e.isHaltBugEIActive {
+		e.halt = 1
+		e.isHaltBugEIActive = false
+	}
 }
 
 func (e *Emulator) instCall(addr uint16) {
 	e.push(e.cpu.PC)
 	e.cpu.PC = addr
+}
+
+func (e *Emulator) instHalt() {
+	if e.hasPendingInterrupts() {
+		e.isInterruptPendingInFirstHaltExecution = true
+	}
+	if e.delayedActivateIMEatInstruction == e.numInstructions {
+		e.isIMEDelayedInFirstHaltExecution = true
+	}
+
+	e.halt = 1
+}
+
+func (e *Emulator) instEI() {
+	e.delayedActivateIMEatInstruction = e.numInstructions + 1
 }
 
 func (e *Emulator) CPURun() {
@@ -26,7 +52,7 @@ func (e *Emulator) CPURun() {
 	case 16: // STOP
 		// TODO: improve stop
 		// Timing is 1 Cycle
-		e.halt = 1
+		e.instHalt()
 		e.popPC()
 	case 24: // JR (unconditional)
 		i8 := int8(e.popPC())
@@ -165,7 +191,7 @@ func (e *Emulator) CPURun() {
 		e.cpu.SetHalfCarryFlag(false)
 		e.cpu.SetCarryFlag(!e.cpu.GetCarryFlag())
 	case 118: // HALT
-		e.halt = 1
+		e.instHalt()
 	case 64, 65, 66, 67, 68, 69, 70, 71, // LD r8, r8
 		72, 73, 74, 75, 76, 77, 78, 79,
 		80, 81, 82, 83, 84, 85, 86, 87,
@@ -301,7 +327,7 @@ func (e *Emulator) CPURun() {
 	case 201: // RET
 		e.instRet()
 	case 217: // RETI
-		e.IME = 1
+		e.instEI()
 		e.instRet()
 	case 233: // JP HL
 		e.cpu.PC = e.cpu.GetHL()
@@ -333,7 +359,7 @@ func (e *Emulator) CPURun() {
 	case 243: // DI
 		e.IME = 0
 	case 251: // EI
-		e.IME = 1
+		e.instEI()
 	case 196, 204, 212, 220: // CALL condition
 		u16 := e.popPC16()
 		if e.cpu.checkCondition((opcode >> 3) & 0x3) {
@@ -554,5 +580,9 @@ func (e *Emulator) CPURun() {
 	default:
 		log.Println("Opcode: ", opcode, " not found")
 		return
+	}
+
+	if e.delayedActivateIMEatInstruction == e.numInstructions {
+		e.IME = 1
 	}
 }

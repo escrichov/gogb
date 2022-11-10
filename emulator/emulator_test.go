@@ -465,8 +465,8 @@ func TestBlargg_instr_timing(t *testing.T) {
 	RomTester(
 		t,
 		"../assets/roms/gb-test-roms/instr_timing/instr_timing.gb",
-		"../screenshots/tests/instr_timing/instr_timing.png",
-		100000000,
+		"../screenshots/tests/blargg/instr_timing/instr_timing.png",
+		10000000,
 	)
 }
 
@@ -1496,6 +1496,15 @@ func TestMooneye_emulator_only_mbc5_rom_8Mb(t *testing.T) {
 		t,
 		"../assets/roms/mooneye/emulator-only/mbc5/rom_8Mb.gb",
 		"../screenshots/tests/mooneye/emulator-only/mbc5/rom_8Mb.png",
+		10000000,
+	)
+}
+
+func TestSameSuite_interrupt_ei_delay_halt(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/same-suite/interrupt/ei_delay_halt.gb",
+		"../screenshots/tests/same-suite/interrupt/ei_delay_halt.png",
 		10000000,
 	)
 }

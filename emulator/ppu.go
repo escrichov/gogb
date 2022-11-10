@@ -146,7 +146,7 @@ func (e *Emulator) PPURun() bool {
 				}
 
 				if ly == (HEIGHT - 1) {
-					e.SetInterruptVBlank()
+					e.requestInterruptVBlank()
 					renderFrame = true
 				}
 

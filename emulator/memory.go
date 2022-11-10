@@ -1,7 +1,6 @@
 package emulator
 
 import (
-	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
 	"log"
 )
@@ -175,7 +174,7 @@ func (e *Emulator) mem8(addr uint16, val uint8, write bool) uint8 {
 
 	if addr == 0xD800 {
 		//val = 00
-		fmt.Println("ENTRA")
+		//fmt.Println("ENTRA")
 	}
 
 	switch addr >> 13 {
@@ -203,12 +202,27 @@ func (e *Emulator) mem8(addr uint16, val uint8, write bool) uint8 {
 					// as the new value after reseting DIV will be 0,
 					// the falling edge detector will detect a falling edge and TIMA will increase.
 					if e.isFallingEdgeWritingDIV() {
-						e.increaseTIMA(1)
+						e.increaseTIMA(1, false)
 					}
 
 					// Reset Div timer
 					val = 0
 					e.internalTimer = 0
+				case 0xFF05: // TIMA: Timer counter
+					if e.timaUpdateWithTMADelayedCycles == e.cycles {
+						// If you write to TIMA during the cycle that TMA is being loaded to it [B],
+						// the write will be ignored and TMA value will be written to TIMA instead.
+						val = e.GetTMA()
+					} else {
+						// During the strange cycle [A] you can prevent the IF flag from being set
+						// and prevent the TIMA from being reloaded from TMA by writing a value to TIMA.
+						// That new value will be the one that stays in the TIMA register after the instruction.
+						e.timaUpdateWithTMADelayedCycles = 0
+					}
+				case 0xFF06: // TMA: Timer modulo
+					if e.timaUpdateWithTMADelayedCycles == e.cycles {
+						e.SetTIMA(val)
+					}
 				case 0xFF07: // TAC: Timer Control
 					val |= 0b11111000 // Unused bits returns 1s
 					// When writing to TAC, if the previously selected multiplexer input was 1
@@ -217,7 +231,9 @@ func (e *Emulator) mem8(addr uint16, val uint8, write bool) uint8 {
 					// but it also happens when disabling the timer
 					// (the same effect as writing to DIV).
 					if e.isFallingEdgeWritingTAC(val) {
-						e.increaseTIMA(1)
+						// Writing to DIV, TAC or other registers won't prevent the IF flag from being set or
+						// TIMA from being reloaded.
+						e.increaseTIMA(1, false)
 					}
 				case 0xFF0F: // IF
 					val |= 0b11100000 // Unused bits returns 1s

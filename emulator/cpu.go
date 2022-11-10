@@ -318,12 +318,19 @@ func (cpu *CPU) r16Group3Set(number uint8, val uint16) {
 func (e *Emulator) popPC() uint8 {
 	result := e.read8(e.cpu.PC)
 	e.cpu.PC++
+
+	if e.isHaltBugActive {
+		e.cpu.PC--
+		e.isHaltBugActive = false
+	}
+
 	return result
 }
 
 func (e *Emulator) popPC16() uint16 {
-	result := e.read16(e.cpu.PC)
-	e.cpu.PC += 2
+	low := e.popPC()
+	high := e.popPC()
+	result := uint16(high)<<8 | uint16(low)
 	return result
 }
 
@@ -374,6 +381,10 @@ func (e *Emulator) r8Set(number uint8, val uint8) {
 
 func (e *Emulator) tick() {
 	e.cycles += 4
+
+	if e.timaUpdateWithTMADelayedCycles == e.cycles {
+		e.reloadTIMAwithTMA()
+	}
 }
 
 func (e *Emulator) push(val uint16) {
