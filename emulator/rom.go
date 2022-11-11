@@ -198,6 +198,7 @@ func (e *Emulator) parseRomHeader() error {
 		e.memoryBankController = 5
 	}
 
+	// Default values for memory bank controllers
 	if e.memoryBankController == 1 {
 		e.mbc1Bank1 = 1
 		if e.romHeader.RomSize >= 1048576 {
@@ -208,6 +209,10 @@ func (e *Emulator) parseRomHeader() error {
 		}
 	} else if e.memoryBankController == 2 {
 		e.mbc2RomBank = 1
+	} else if e.memoryBankController == 3 {
+		e.rom1Pointer = 32768
+	} else if e.memoryBankController == 5 {
+		e.mbc5RomBank = 1
 	}
 
 	e.PrintCartridge()

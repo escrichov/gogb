@@ -18,18 +18,21 @@ func (e *Emulator) memoryBankController5Write(addr uint16, val uint8) {
 	case 1: // 0x2000-3FFF
 		if addr <= 0x2FFF {
 			//  0x2000-2FFF - 8 least significant bits of ROM bank number
-			e.mbc5RomBank = uint16(val) | (e.mbc5RomBank & 0x0100)
+			e.mbc5RomBank = (e.mbc5RomBank & 0x0100) | uint16(val)
+			e.mbc5RomBank &= e.romHeader.RomBanks - 1
 		} else if addr <= 0x3FFF {
 			// 0x4000 - 0x5FFF - 9th bit of ROM bank number
-			e.mbc5RomBank = uint16(val) | (e.mbc5RomBank & 0x0100)
+			e.mbc5RomBank = (uint16(val&0x01) << 8) | (e.mbc5RomBank & 0x00FF)
+			e.mbc5RomBank &= e.romHeader.RomBanks - 1
 		}
 	case 2: // 0x4000-5FFF - RAM bank number
 		e.mbc5EnableRumble = GetBit(val, 3)
 		e.mbc5RamBank = val & 0x0F
+		e.mbc5RamBank &= uint8(e.romHeader.RamBanks) - 1
 	case 5: // 0xA000 - 0xBFFF
 		if e.mbc5EnableRamBank {
 			// RAM sizes are 8 KiB, 32 KiB and 128 KiB.
-			ramAddr := uint32(e.mbc5RamBank)<<13 | uint32(addr&0x1fff)
+			ramAddr := (uint32(e.mbc5RamBank) << 13) | uint32(addr&0x1fff)
 			e.extrambank[ramAddr] = val
 		}
 	}
@@ -43,12 +46,12 @@ func (e *Emulator) memoryBankController5Read(addr uint16) uint8 {
 		// Contains the first 16 KiB of the ROM.
 		return e.rom0[addr&0x3fff]
 	case 2, 3: // 0x4000 - 0x7FFF
-		bankAddr := uint32(e.mbc5RomBank)<<14 + uint32(addr&0x3fff)
+		bankAddr := (uint32(e.mbc5RomBank) << 14) + uint32(addr&0x3fff)
 		return e.rom0[bankAddr]
 	case 5: // 0xA000 - 0xBFFF
 		// RAM sizes are 8 KiB, 32 KiB and 128 KiB.
 		if e.mbc5EnableRamBank {
-			ramAddr := uint32(e.mbc5RamBank)<<13 | uint32(addr&0x1fff)
+			ramAddr := (uint32(e.mbc5RamBank) << 13) | uint32(addr&0x1fff)
 			return e.extrambank[ramAddr]
 		}
 		return 0xFF
