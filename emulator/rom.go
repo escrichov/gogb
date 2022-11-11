@@ -27,6 +27,7 @@ type RomHeader struct {
 	ComplementCheck      uint8
 	CheckSum             uint16
 	CartridgeTypeName    string
+	HasBattery           bool
 }
 
 func romName(cartridgeType uint8) string {
@@ -155,6 +156,11 @@ func (e *Emulator) parseRomHeader() error {
 	e.romHeader.RomSize = 32768 * (1 << e.romHeader.RomSizeByte)
 	e.romHeader.RomBanks = uint16(e.romHeader.RomSize / 16384)
 
+	// Check real Rom Size is equal to Rom header size
+	if e.romHeader.RomSize != len(e.rom0) {
+		return fmt.Errorf("real rom size (%d) != rom header size (%d)", e.romHeader.RomSize, len(e.rom0))
+	}
+
 	// RAM
 	switch e.romHeader.RamSizeByte {
 	case 0, 1:
@@ -185,17 +191,36 @@ func (e *Emulator) parseRomHeader() error {
 		e.memoryBankController = 1
 	case 3: // MBC1+RAM+BATTERY
 		e.memoryBankController = 1
-	case 5, 6:
+		e.romHeader.HasBattery = true
+	case 5:
 		e.memoryBankController = 2
-	case 8, 9:
+	case 6:
+		e.romHeader.HasBattery = true
+		e.memoryBankController = 2
+	case 8:
 		e.memoryBankController = 0
-	case 0xB, 0xC, 0xD:
+	case 9:
+		e.memoryBankController = 0
+		e.romHeader.HasBattery = true
+	case 0xB, 0xC:
 		e.memoryBankController = 1
-	case 0xF, 0x10, 0x11, 0x12, 0x13:
+	case 0x0D:
+		e.memoryBankController = 1
+		e.romHeader.HasBattery = true
+	case 0x11, 0x12:
 		e.memoryBankController = 3
-		e.rom1Pointer = 32768
-	case 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E:
+	case 0x0F, 0x10, 0x13:
+		e.memoryBankController = 3
+		e.romHeader.HasBattery = true
+	case 0x19, 0x1A, 0x1C, 0x1D:
 		e.memoryBankController = 5
+	case 0x1B, 0x1E:
+		e.memoryBankController = 5
+		e.romHeader.HasBattery = true
+	case 0x22:
+		e.romHeader.HasBattery = true
+	case 0xFF:
+		e.romHeader.HasBattery = true
 	}
 
 	// Default values for memory bank controllers
