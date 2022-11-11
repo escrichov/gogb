@@ -53,25 +53,52 @@ func (e *Emulator) PrintTimers() {
 	fmt.Println(timers)
 }
 
+func convertToHumanBytes(numBytes int) string {
+	if numBytes < 1024 {
+		return fmt.Sprintf("%d Bytes", numBytes/1024)
+	} else if numBytes >= 1024 && numBytes < 1048576 {
+		return fmt.Sprintf("%d KiB", numBytes/1024)
+	} else {
+		return fmt.Sprintf("%d MiB", numBytes/1048576)
+	}
+}
+
+func convertToHumanBits(numBytes int) string {
+	numBits := numBytes * 8
+	if numBits < 1024 {
+		return fmt.Sprintf("%d bits", numBits/1024)
+	} else if numBits >= 1024 && numBits < 1048576 {
+		return fmt.Sprintf("%d Kib", numBits/1024)
+	} else {
+		return fmt.Sprintf("%d Mib", numBits/1048576)
+	}
+}
+
 func (e *Emulator) PrintCartridge() {
 	cartridge := fmt.Sprintf(
 		"Cartridge\n\t"+
 			"Title: %s\n\t"+
 			"Cartridge Type: %s (%d)\n\t"+
 			"MBC: %d\n\t"+
-			"Rom Size: %d\n\t"+
+			"Rom Size: %d bytes (%s, %s)\n\t"+
 			"Rom Banks: %d (16KiB each)\n\t"+
-			"Ram Size: %d\n\t"+
+			"Ram Size: %d bytes (%s, %s)\n\t"+
 			"Ram Banks: %d (8KiB each)\n\t"+
+			"Battery: %t\n\t"+
 			"CGB flag: %x\n",
 		e.romHeader.Title,
 		e.romHeader.CartridgeTypeName,
 		e.romHeader.CartridgeType,
 		e.memoryBankController,
 		e.romHeader.RomSize,
+		convertToHumanBytes(e.romHeader.RomSize),
+		convertToHumanBits(e.romHeader.RomSize),
 		e.romHeader.RomBanks,
 		e.romHeader.RamSize,
+		convertToHumanBytes(e.romHeader.RamSize),
+		convertToHumanBits(e.romHeader.RamSize),
 		e.romHeader.RamBanks,
+		e.romHeader.HasBattery,
 		e.romHeader.ColorGB,
 	)
 	fmt.Println(cartridge)
