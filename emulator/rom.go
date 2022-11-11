@@ -235,7 +235,8 @@ func (e *Emulator) parseRomHeader() error {
 	} else if e.memoryBankController == 2 {
 		e.mbc2RomBank = 1
 	} else if e.memoryBankController == 3 {
-		e.rom1Pointer = 32768
+		e.mbc3RomBank = 1
+		e.mbc3LatchRegister = 0xFFFF
 	} else if e.memoryBankController == 5 {
 		e.mbc5RomBank = 1
 	}

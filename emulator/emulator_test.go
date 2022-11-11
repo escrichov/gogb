@@ -1562,3 +1562,12 @@ func TestSameSuite_interrupt_ei_delay_halt(t *testing.T) {
 		10000000,
 	)
 }
+
+func TestMealyBugTearoom_mbc_mbc3_rtc(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/mealybug-tearoom-tests/mbc/mbc3_rtc.gb",
+		"../screenshots/tests/mealybug-tearoom-tests/mbc/mbc3_rtc.png",
+		100000000,
+	)
+}
