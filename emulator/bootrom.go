@@ -18,7 +18,7 @@ func (e *Emulator) loadBootRom(fileName string) error {
 }
 
 func (e *Emulator) initializeBootRomValues() {
-	e.cpu.PC = 256
+	e.cpu.PC = 0x0100
 	e.cpu.SetSP(0xfffe)
 	e.cpu.SetA(0x01)
 	e.cpu.SetF(0xb0)
@@ -30,7 +30,7 @@ func (e *Emulator) initializeBootRomValues() {
 	e.cpu.SetL(0x4d)
 
 	e.IME = 0
-	e.SetLCDC(145)
+	e.SetLCDC(0x91)
 	e.SetLY(0)
 	e.SetDIV(0xab)
 	e.SetInternalTimer(0xabcc) // Or 0xabc4 if not initialized in 8 cycles at startup
