@@ -8,7 +8,7 @@ import (
 func main() {
 
 	emulator, err := emulator.NewEmulator(
-		"./assets/roms/roms/pokeblue.gb",
+		"./assets/roms/roms/supermarioland.gb",
 		"rom.sav",
 		//"./assets/roms/bootroms/dmg_boot.bin",
 		"",

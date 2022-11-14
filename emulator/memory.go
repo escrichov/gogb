@@ -88,6 +88,7 @@ func (e *Emulator) mem8(addr uint16, val uint8, write bool) uint8 {
 					e.SetLCDC(val)
 				case 0xFF41: // STAT: LCD status
 					val |= 0b10000000 // Unused bits returns 1s
+					e.SetLCDStatus(val)
 				case 0xFF46:
 					for y := WIDTH - 1; y >= 0; y-- {
 						e.io[y] = e.read8(uint16(val)<<8 | uint16(y))

@@ -61,6 +61,7 @@ type Emulator struct {
 	keyboardState []uint8
 	frameBuffer   [WIDTH * HEIGHT]int32
 	lcdcControl   LCDControl
+	lcdStatus     LCDStatus
 
 	// Timers
 	internalTimer                  uint16

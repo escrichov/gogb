@@ -1,5 +1,10 @@
 package emulator
 
+const (
+	lcdMode2Bounds = 80
+	lcdMode3Bounds = lcdMode2Bounds + 172
+)
+
 type LCDControl struct {
 	LCDPPUEnable           bool // Bit 7, 0=Off, 1=On
 	WindowTileMapArea      bool // Bit 6, 0=9800-9BFF, 1=9C00-9FFF
@@ -11,12 +16,25 @@ type LCDControl struct {
 	BgWindowEnablePriority bool // Bit 0, 0=Off, 1=On
 }
 
+type LCDStatus struct {
+	LYCLYSTATInterruptSource       bool  // Bit 6, 0=Off, 1=Enable
+	Mode2OAMSTATInterruptSource    bool  // Bit 5, 0=Off, 1=Enable
+	Mode1VBlankSTATInterruptSource bool  // Bit 4, 0=Off, 1=Enable
+	Mode0HBlankSTATInterruptSource bool  // Bit 3, 0=Off, 1=Enable
+	LYCLYFlag                      bool  // Bit 2, 0=Different, 1=Equal
+	ModeFlag                       uint8 // Bit 1-0, 0: HBlank, 1: VBlank, 2: Searching OAM, 3: Transferring Data to LCD Controller
+}
+
 func (e *Emulator) SetLY(value uint8) {
 	e.io[324] = value
 }
 
 func (e *Emulator) GetLY() uint8 {
 	return e.io[324]
+}
+
+func (e *Emulator) GetLYC() uint8 {
+	return e.io[325]
 }
 
 func (e *Emulator) GetLCDC() *LCDControl {
@@ -35,6 +53,40 @@ func (e *Emulator) SetLCDC(value uint8) {
 	e.lcdcControl.BgWindowEnablePriority = GetBit(value, 0)
 }
 
+func (e *Emulator) SaveLCDC() {
+	e.io[320] = (BoolToUint8(e.lcdcControl.LCDPPUEnable) << 7) |
+		(BoolToUint8(e.lcdcControl.WindowTileMapArea) << 6) |
+		(BoolToUint8(e.lcdcControl.WindowEnable) << 5) |
+		(BoolToUint8(e.lcdcControl.BgWindowTileDataArea) << 4) |
+		(BoolToUint8(e.lcdcControl.BgTileMapArea) << 3) |
+		(BoolToUint8(e.lcdcControl.ObjSize) << 2) |
+		(BoolToUint8(e.lcdcControl.ObjEnable) << 1) |
+		BoolToUint8(e.lcdcControl.BgWindowEnablePriority)
+}
+
+func (e *Emulator) GetLCDStatus() *LCDStatus {
+	return &e.lcdStatus
+}
+
+func (e *Emulator) SetLCDStatus(value uint8) {
+	e.io[321] = value
+	e.lcdStatus.LYCLYSTATInterruptSource = GetBit(value, 6)
+	e.lcdStatus.Mode2OAMSTATInterruptSource = GetBit(value, 5)
+	e.lcdStatus.Mode1VBlankSTATInterruptSource = GetBit(value, 4)
+	e.lcdStatus.Mode0HBlankSTATInterruptSource = GetBit(value, 3)
+	e.lcdStatus.LYCLYFlag = GetBit(value, 2)
+	e.lcdStatus.ModeFlag = value & 0x3
+}
+
+func (e *Emulator) SaveLCDStatus() {
+	e.io[321] = (BoolToUint8(e.lcdStatus.LYCLYSTATInterruptSource) << 6) |
+		(BoolToUint8(e.lcdStatus.Mode2OAMSTATInterruptSource) << 5) |
+		(BoolToUint8(e.lcdStatus.Mode1VBlankSTATInterruptSource) << 4) |
+		(BoolToUint8(e.lcdStatus.Mode0HBlankSTATInterruptSource) << 3) |
+		(BoolToUint8(e.lcdStatus.LYCLYFlag) << 2) |
+		e.lcdStatus.ModeFlag
+}
+
 func (e *Emulator) getColor(tile, yOffset, xOffset int) uint8 {
 	videoRamIndex := tile*16 + yOffset*2
 	tileData := e.videoRam[videoRamIndex]
@@ -42,8 +94,63 @@ func (e *Emulator) getColor(tile, yOffset, xOffset int) uint8 {
 	return ((tileData1>>xOffset)%2)*2 + (tileData>>xOffset)%2
 }
 
+// Set the status of the LCD based on the current state of memory.
+func (e *Emulator) setLCDStatus() {
+	status := e.GetLCDStatus()
+
+	if !e.lcdcControl.LCDPPUEnable {
+		status.LYCLYSTATInterruptSource = false
+		status.Mode2OAMSTATInterruptSource = false
+		status.Mode1VBlankSTATInterruptSource = false
+		status.Mode0HBlankSTATInterruptSource = false
+		status.LYCLYFlag = false
+		status.ModeFlag = 0
+	}
+
+	ly := e.GetLY()
+	currentMode := status.ModeFlag
+
+	var mode uint8
+	requestInterrupt := false
+
+	switch {
+	case ly >= 144:
+		mode = 1
+		requestInterrupt = status.Mode1VBlankSTATInterruptSource
+	case e.ppuDot < lcdMode2Bounds:
+		mode = 2
+		requestInterrupt = status.Mode2OAMSTATInterruptSource
+	case e.ppuDot < lcdMode3Bounds:
+		mode = 3
+	default:
+		mode = 0
+		requestInterrupt = status.Mode0HBlankSTATInterruptSource
+		if mode != currentMode {
+			//gb.Memory.doHDMATransfer()
+		}
+	}
+
+	if requestInterrupt && mode != currentMode {
+		e.requestInterruptLCDStat()
+	}
+
+	// Check if LYC == LY (coincidence flag)
+	lyc := e.GetLYC()
+	if ly == lyc {
+		e.lcdStatus.LYCLYFlag = true
+		if e.lcdStatus.LYCLYSTATInterruptSource {
+			e.requestInterruptLCDStat()
+		}
+	} else {
+		e.lcdStatus.LYCLYFlag = false
+	}
+
+	e.SaveLCDStatus()
+}
+
 func (e *Emulator) PPURun() bool {
 	renderFrame := false
+	e.setLCDStatus()
 
 	// PPU
 	cyclesElapsed := e.cycles - e.prevCycles
