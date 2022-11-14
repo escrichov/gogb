@@ -32,6 +32,7 @@ type Emulator struct {
 	rom0       []byte
 	bootRom    []byte
 
+	// Memory Bank Controllers
 	mbc1Bank1           uint8
 	mbc1Bank2           uint8
 	mbc1MemoryModel     int
@@ -64,6 +65,9 @@ type Emulator struct {
 	// Timers
 	internalTimer                  uint16
 	timaUpdateWithTMADelayedCycles uint64
+
+	// Serial
+	serialTransferedBits uint8
 
 	palette []int32
 
@@ -163,6 +167,7 @@ func (e *Emulator) RunTest(numCycles uint64) {
 		}
 
 		e.incrementTimers()
+		e.serialTransfer()
 
 		renderFrame := e.PPURun()
 		if renderFrame {
@@ -201,6 +206,7 @@ func (e *Emulator) Run() {
 		}
 
 		e.incrementTimers()
+		e.serialTransfer()
 
 		renderFrame := e.PPURun()
 		if renderFrame {
