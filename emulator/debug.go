@@ -75,6 +75,8 @@ func convertToHumanBits(numBytes int) string {
 }
 
 func (e *Emulator) PrintCartridge() {
+	mbcFeatures := e.rom.controller.GetFeatures()
+
 	cartridge := fmt.Sprintf(
 		"Cartridge\n\t"+
 			"Title: %s\n\t"+
@@ -85,21 +87,23 @@ func (e *Emulator) PrintCartridge() {
 			"Ram Size: %d bytes (%s, %s)\n\t"+
 			"Ram Banks: %d (8KiB each)\n\t"+
 			"Battery: %t\n\t"+
+			"Ram Filename: %s\n\t"+
 			"CGB flag: %x\n",
-		e.romHeader.Title,
-		e.romHeader.CartridgeTypeName,
-		e.romHeader.CartridgeType,
-		e.memoryBankController,
-		e.romHeader.RomSize,
-		convertToHumanBytes(e.romHeader.RomSize),
-		convertToHumanBits(e.romHeader.RomSize),
-		e.romHeader.RomBanks,
-		e.romHeader.RamSize,
-		convertToHumanBytes(e.romHeader.RamSize),
-		convertToHumanBits(e.romHeader.RamSize),
-		e.romHeader.RamBanks,
-		e.romHeader.HasBattery,
-		e.romHeader.ColorGB,
+		e.rom.features.Title,
+		e.rom.features.CartridgeTypeName,
+		e.rom.features.CartridgeType,
+		mbcFeatures.MemoryBankControllerNumber,
+		mbcFeatures.RomSize,
+		convertToHumanBytes(mbcFeatures.RomSize),
+		convertToHumanBits(mbcFeatures.RomSize),
+		mbcFeatures.RomBanks,
+		mbcFeatures.RamSize,
+		convertToHumanBytes(mbcFeatures.RamSize),
+		convertToHumanBits(mbcFeatures.RamSize),
+		mbcFeatures.RamBanks,
+		mbcFeatures.HasBattery,
+		mbcFeatures.RamFilename,
+		e.rom.features.ColorGB,
 	)
 	fmt.Println(cartridge)
 }

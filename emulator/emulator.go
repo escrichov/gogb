@@ -26,37 +26,12 @@ type Emulator struct {
 	romFilename     string
 	bootRomFilename string
 
-	io         [0x200]uint8
-	extrambank *[0x8000]uint8
-	ppuDot     int
-	rom0       []byte
-	bootRom    []byte
+	io      [0x200]uint8
+	ppuDot  int
+	bootRom []byte
 
-	// Memory Bank Controllers
-	mbc1Bank1           uint8
-	mbc1Bank2           uint8
-	mbc1MemoryModel     int
-	mbc1EnableRamBank   bool
-	mbc1AllowedRomBank2 bool
-	mbc1AllowedRamBank2 bool
-	mbc1IsMBC1M         bool
-
-	mbc3EnableRamBank  bool
-	mbc3EnableRTC      bool
-	mbc3RomBank        uint8
-	mbc3RamBank        uint8
-	mbc3ClockCounter   ClockCounter
-	mbc3LatchRegister  uint16
-	mbc3LatchClock     bool
-	mbc3RegisterSelect uint8
-
-	mbc2RomBank       uint8
-	mbc2EnableRamBank bool
-
-	mbc5RomBank       uint16
-	mbc5RamBank       uint8
-	mbc5EnableRamBank bool
-	mbc5EnableRumble  bool
+	// Rom
+	rom *Rom
 
 	keyboardState []uint8
 	frameBuffer   [WIDTH * HEIGHT]int32
@@ -90,18 +65,18 @@ type Emulator struct {
 	consoleMessageDuration    time.Duration
 	consoleMessageStart       time.Time
 
-	numInstructions      uint64
-	vsyncEnabled         bool
-	showFPS              bool
-	stop                 bool
-	pause                bool
-	reset                bool
-	bootRomEnabled       bool
-	romHeader            RomHeader
-	memoryBankController int
+	numInstructions uint64
+	vsyncEnabled    bool
+	showFPS         bool
+	stop            bool
+	pause           bool
+	reset           bool
+	bootRomEnabled  bool
 }
 
-func NewEmulator(romFilename, saveFilename, bootRomFilename, fontFilename string, showWindow bool) (*Emulator, error) {
+func NewEmulator(romFilename, bootRomFilename, fontFilename string, showWindow bool) (*Emulator, error) {
+	var err error
+
 	emulator := Emulator{
 		ppuDot:          32,
 		palette:         []int32{-1, -23197, -65536, -1 << 24, -1, -8092417, -12961132, -1 << 24},
@@ -130,20 +105,17 @@ func NewEmulator(romFilename, saveFilename, bootRomFilename, fontFilename string
 		emulator.frameBuffer[i] = 0
 	}
 
-	err := emulator.loadRom(romFilename)
+	emulator.rom, err = newRomFromFile(romFilename)
 	if err != nil {
 		return nil, err
 	}
 
-	err = emulator.initializeSDL(ToCamel(emulator.romHeader.Title), fontFilename, 4)
+	err = emulator.initializeSDL(ToCamel(emulator.rom.features.Title), fontFilename, 4)
 	if err != nil {
 		return nil, err
 	}
 
-	err = emulator.initializeSaveFile(saveFilename)
-	if err != nil {
-		return nil, err
-	}
+	emulator.PrintCartridge()
 
 	return &emulator, nil
 }
@@ -229,6 +201,7 @@ func (e *Emulator) Run() {
 }
 
 func (e *Emulator) Reset() error {
+	var err error
 	e.reset = false
 
 	if e.bootRomEnabled {
@@ -245,7 +218,7 @@ func (e *Emulator) Reset() error {
 		e.frameBuffer[i] = 0
 	}
 
-	err := e.loadRom(e.romFilename)
+	e.rom, err = newRomFromFile(e.romFilename)
 	if err != nil {
 		return err
 	}

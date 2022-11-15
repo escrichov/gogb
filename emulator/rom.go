@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-type RomHeader struct {
+type RomFeatures struct {
 	Title                string
 	TitleBytes           []byte
 	ColorGB              uint8
@@ -16,21 +16,24 @@ type RomHeader struct {
 	GBSGBIndicator       uint8
 	CartridgeType        uint8
 	RomSizeByte          uint8
-	RomBanks             uint16
-	RomSize              int
 	RamSizeByte          uint8
-	RamSize              int
-	RamBanks             uint16
 	DestinationCode      uint8
 	LicenseCodeOld       uint8
 	MaskROMVersionNumber uint8
 	ComplementCheck      uint8
+	CheckSumBytes        []byte
 	CheckSum             uint16
 	CartridgeTypeName    string
-	HasBattery           bool
+
+	Filename string
 }
 
-func romName(cartridgeType uint8) string {
+type Rom struct {
+	features   *RomFeatures
+	controller MemoryBankController
+}
+
+func getCartridgeTypeName(cartridgeType uint8) string {
 	switch cartridgeType {
 	case 0x00:
 		return "ROM ONLY"
@@ -93,31 +96,44 @@ func romName(cartridgeType uint8) string {
 	}
 }
 
-func (e *Emulator) loadRom(fileName string) error {
+func newRomFromBytes(bs []byte, romFilename string) (*Rom, error) {
 	var err error
+	var rom = Rom{}
+
+	rom.features, err = parseRomHeader(bs)
+	if err != nil {
+		return nil, err
+	}
+
+	rom.controller, err = newMemoryBankController(bs, romFilename)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rom, err
+}
+
+func newRomFromFile(fileName string) (*Rom, error) {
+	var err error
+	var romData []byte
 
 	bs, err := os.ReadFile(fileName)
 	if err != nil {
 		log.Println("Rom file not found:", err)
-		return err
+		return nil, err
 	}
 
 	fileExtension := filepath.Ext(fileName)
 	if fileExtension == ".zip" {
-		e.rom0, err = UnzipBytes(bs)
+		romData, err = UnzipBytes(bs)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else {
-		e.rom0 = bs
+		romData = bs
 	}
 
-	err = e.parseRomHeader()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return newRomFromBytes(romData, fileName)
 }
 
 func parseRomTitle(bs []byte) string {
@@ -131,117 +147,134 @@ func parseRomTitle(bs []byte) string {
 	return string(bs[0:end])
 }
 
-func (e *Emulator) parseRomHeader() error {
-	if len(e.rom0) < 0x150 {
-		return fmt.Errorf("incorrect rom size %d", len(e.rom0))
-	}
-
-	e.romHeader.Title = parseRomTitle(e.rom0[0x134:0x144])
-	e.romHeader.TitleBytes = e.rom0[0x134:0x144]
-	e.romHeader.ColorGB = e.rom0[0x143]
-	e.romHeader.LicenseCodeNew = string(e.rom0[0x144:0x146])
-	e.romHeader.GBSGBIndicator = e.rom0[0x146]
-	e.romHeader.CartridgeType = e.rom0[0x147]
-	e.romHeader.RomSizeByte = e.rom0[0x148]
-	e.romHeader.RamSizeByte = e.rom0[0x149]
-	e.romHeader.DestinationCode = e.rom0[0x14A]
-	e.romHeader.LicenseCodeOld = e.rom0[0x14B]
-	e.romHeader.MaskROMVersionNumber = e.rom0[0x14C]
-	e.romHeader.ComplementCheck = e.rom0[0x14D]
-	e.romHeader.CheckSum = binary.BigEndian.Uint16(e.rom0[0x14E:0x150])
-
-	e.romHeader.CartridgeTypeName = romName(e.romHeader.CartridgeType)
-
-	// ROM
-	e.romHeader.RomSize = 32768 * (1 << e.romHeader.RomSizeByte)
-	e.romHeader.RomBanks = uint16(e.romHeader.RomSize / 16384)
-
-	// Check real Rom Size is equal to Rom header size
-	if e.romHeader.RomSize != len(e.rom0) {
-		return fmt.Errorf("real rom size (%d) != rom header size (%d)", e.romHeader.RomSize, len(e.rom0))
-	}
-
-	// RAM
-	switch e.romHeader.RamSizeByte {
-	case 0, 1:
-		e.romHeader.RamSize = 0
-		e.romHeader.RamBanks = 0
-	case 2:
-		e.romHeader.RamSize = 8192
-		e.romHeader.RamBanks = 1
-	case 3:
-		e.romHeader.RamSize = 32768
-		e.romHeader.RamBanks = 4
-	case 4:
-		e.romHeader.RamSize = 131072
-		e.romHeader.RamBanks = 16
-	case 5:
-		e.romHeader.RamSize = 65536
-		e.romHeader.RamBanks = 8
-	}
-
-	switch e.romHeader.CartridgeType {
+func getMemoryBankControllerByCartridgeType(cartridgeType uint8) int {
+	memoryBankControllerNumber := -1
+	switch cartridgeType {
 	case 0: // ROM ONLY
-		e.memoryBankController = 0
+		memoryBankControllerNumber = 0
 	case 1: // MBC1
-		e.memoryBankController = 1
-		e.romHeader.RamSize = 0
-		e.romHeader.RamBanks = 0
+		memoryBankControllerNumber = 1
 	case 2: // MBC1+RAM
-		e.memoryBankController = 1
+		memoryBankControllerNumber = 1
 	case 3: // MBC1+RAM+BATTERY
-		e.memoryBankController = 1
-		e.romHeader.HasBattery = true
+		memoryBankControllerNumber = 1
 	case 5:
-		e.memoryBankController = 2
+		memoryBankControllerNumber = 2
 	case 6:
-		e.romHeader.HasBattery = true
-		e.memoryBankController = 2
+		memoryBankControllerNumber = 2
 	case 8:
-		e.memoryBankController = 0
+		memoryBankControllerNumber = 0
 	case 9:
-		e.memoryBankController = 0
-		e.romHeader.HasBattery = true
+		memoryBankControllerNumber = 0
 	case 0xB, 0xC:
-		e.memoryBankController = 1
+		memoryBankControllerNumber = 1
 	case 0x0D:
-		e.memoryBankController = 1
-		e.romHeader.HasBattery = true
+		memoryBankControllerNumber = 1
 	case 0x11, 0x12:
-		e.memoryBankController = 3
+		memoryBankControllerNumber = 3
 	case 0x0F, 0x10, 0x13:
-		e.memoryBankController = 3
-		e.romHeader.HasBattery = true
+		memoryBankControllerNumber = 3
 	case 0x19, 0x1A, 0x1C, 0x1D:
-		e.memoryBankController = 5
+		memoryBankControllerNumber = 5
 	case 0x1B, 0x1E:
-		e.memoryBankController = 5
-		e.romHeader.HasBattery = true
-	case 0x22:
-		e.romHeader.HasBattery = true
-	case 0xFF:
-		e.romHeader.HasBattery = true
+		memoryBankControllerNumber = 5
 	}
 
-	// Default values for memory bank controllers
-	if e.memoryBankController == 1 {
-		e.mbc1Bank1 = 1
-		if e.romHeader.RomSize >= 1048576 {
-			e.mbc1AllowedRomBank2 = true
-		}
-		if e.romHeader.RamSize >= 32768 {
-			e.mbc1AllowedRamBank2 = true
-		}
-	} else if e.memoryBankController == 2 {
-		e.mbc2RomBank = 1
-	} else if e.memoryBankController == 3 {
-		e.mbc3RomBank = 1
-		e.mbc3LatchRegister = 0xFFFF
-	} else if e.memoryBankController == 5 {
-		e.mbc5RomBank = 1
+	return memoryBankControllerNumber
+}
+
+func hasBattery(cartridgeType uint8) bool {
+	switch cartridgeType {
+	case 0x03: // MBC1+RAM+BATTERY
+		return true
+	case 0x06: // MBC2+BATTERY
+		return true
+	case 0x09: // ROM+RAM+BATTERY
+		return true
+	case 0x0D: // MMM01+RAM+BATTERY
+		return true
+	case 0x0F: // MBC3+TIMER+BATTERY
+		return true
+	case 0x10: // MBC3+TIMER+RAM+BATTERY
+		return true
+	case 0x13: // MBC3+RAM+BATTERY
+		return true
+	case 0x1B: // MBC5+RAM+BATTERY
+		return true
+	case 0x1E: // MBC5+RUMBLE+RAM+BATTERY
+		return true
+	case 0x22: // MBC7+SENSOR+RUMBLE+RAM+BATTERY
+		return true
+	case 0xFF: // HuC1+RAM+BATTERY
+		return true
 	}
 
-	e.PrintCartridge()
+	return false
+}
 
-	return nil
+func isRamAllowed(cartridgeType uint8) bool {
+	switch cartridgeType {
+	case 0x02: // MBC1+RAM
+		return true
+	case 0x03: // MBC1+RAM+BATTERY
+		return true
+	case 0x05: // MBC2 (It always has ram)
+		return true
+	case 0x06: // MBC2+BATTERY (It always has ram)
+		return true
+	case 0x08: // ROM+RAM
+		return true
+	case 0x09: // ROM+RAM+BATTERY
+		return true
+	case 0x0C: // MMM01+RAM
+		return true
+	case 0x0D: // MMM01+RAM+BATTERY
+		return true
+	case 0x10: // MBC3+TIMER+RAM+BATTERY
+		return true
+	case 0x12: // MBC3+RAM
+		return true
+	case 0x13: // MBC3+RAM+BATTERY
+		return true
+	case 0x1A: // MBC5+RAM
+		return true
+	case 0x1B: // MBC5+RAM+BATTERY
+		return true
+	case 0x1D: // MBC5+RUMBLE+RAM
+		return true
+	case 0x1E: // MBC5+RUMBLE+RAM+BATTERY
+		return true
+	case 0x22: // MBC7+SENSOR+RUMBLE+RAM+BATTERY
+		return true
+	case 0xFF: // HuC1+RAM+BATTERY
+		return true
+	}
+
+	return false
+}
+
+func parseRomHeader(romData []byte) (*RomFeatures, error) {
+	var romFeatures RomFeatures
+
+	if len(romData) < 0x150 {
+		return nil, fmt.Errorf("incorrect rom size %d", len(romData))
+	}
+
+	romFeatures.Title = parseRomTitle(romData[0x134:0x144])
+	romFeatures.TitleBytes = romData[0x134:0x144]
+	romFeatures.ColorGB = romData[0x143]
+	romFeatures.LicenseCodeNew = string(romData[0x144:0x146])
+	romFeatures.GBSGBIndicator = romData[0x146]
+	romFeatures.CartridgeType = romData[0x147]
+	romFeatures.RomSizeByte = romData[0x148]
+	romFeatures.RamSizeByte = romData[0x149]
+	romFeatures.DestinationCode = romData[0x14A]
+	romFeatures.LicenseCodeOld = romData[0x14B]
+	romFeatures.MaskROMVersionNumber = romData[0x14C]
+	romFeatures.ComplementCheck = romData[0x14D]
+	romFeatures.CheckSumBytes = romData[0x14E:0x150]
+	romFeatures.CheckSum = binary.BigEndian.Uint16(romFeatures.CheckSumBytes)
+	romFeatures.CartridgeTypeName = getCartridgeTypeName(romFeatures.CartridgeType)
+
+	return &romFeatures, nil
 }

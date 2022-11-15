@@ -17,9 +17,17 @@ func (e *Emulator) mem8(addr uint16, val uint8, write bool) uint8 {
 		if e.bootRomEnabled && addr <= 0xFF {
 			return e.bootRom[addr]
 		}
-		return e.memMemoryBankController(addr, val, write)
+		if write {
+			e.rom.controller.Write(addr, val)
+			return 0x00
+		}
+		return e.rom.controller.Read(addr)
 	case 1, 2, 3, 5: // 0x2000 - 0xBFFF
-		return e.memMemoryBankController(addr, val, write)
+		if write {
+			e.rom.controller.Write(addr, val)
+			return 0x00
+		}
+		return e.rom.controller.Read(addr)
 	case 4: // 0x8000 - 0x9FFF
 		addr &= 0x1fff
 		if write {

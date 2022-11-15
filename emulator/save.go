@@ -19,8 +19,8 @@ func (e *Emulator) BessStore(filename string) error {
 	// Info Block
 	data.WriteString("INFO")
 	binary.Write(data, binary.LittleEndian, int32(0x12))
-	data.Write(e.rom0[0x134:0x144]) // ROM (Title)
-	data.Write(e.rom0[0x14E:0x150]) // ROM (Global checksum)
+	data.Write(e.rom.features.TitleBytes)    // ROM (Title)
+	data.Write(e.rom.features.CheckSumBytes) // ROM (Global checksum)
 
 	// Core Block
 	data.WriteString("CORE")
@@ -322,12 +322,12 @@ func (e *Emulator) BessLoad(filename string) error {
 	}
 
 	// Extra checks
-	if res := bytes.Compare(romTitle, e.romHeader.TitleBytes); res != 0 {
-		return fmt.Errorf("incorrect rom title: %v != %v", []byte(romTitle), []byte(e.romHeader.Title))
+	if res := bytes.Compare(romTitle, e.rom.features.TitleBytes); res != 0 {
+		return fmt.Errorf("incorrect rom title: %v != %v", []byte(romTitle), []byte(e.rom.features.Title))
 	}
 
-	if romCheckSum != e.romHeader.CheckSum {
-		return fmt.Errorf("incorrect rom checksum: %d != %d", romCheckSum, e.romHeader.CheckSum)
+	if romCheckSum != e.rom.features.CheckSum {
+		return fmt.Errorf("incorrect rom checksum: %d != %d", romCheckSum, e.rom.features.CheckSum)
 	}
 
 	if majorVersion != 1 {

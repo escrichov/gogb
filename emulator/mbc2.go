@@ -1,6 +1,23 @@
 package emulator
 
-func (e *Emulator) memoryBankController2Write(addr uint16, val uint8) {
+type MBC2 struct {
+	*BaseMBC
+
+	mbc2RomBank       uint8
+	mbc2EnableRamBank bool
+}
+
+// NewMBC2
+// Max 256 KiB ROM and 512x4 bits RAM
+// 1 "Register"
+// - 0x0000-0x3FFF - RAM Enable, ROM Bank Number [write-only]
+func NewMBC2(baseMBC *BaseMBC) *MBC2 {
+	mbc := &MBC2{BaseMBC: baseMBC, mbc2RomBank: 1}
+	mbc.ram = make([]byte, 512) // 512 Fixed ram
+	return mbc
+}
+
+func (mbc *MBC2) Write(addr uint16, val uint8) {
 	// 1 "Register"
 	// - 0x0000-0x3FFF - RAM Enable, ROM Bank Number
 
@@ -8,68 +25,54 @@ func (e *Emulator) memoryBankController2Write(addr uint16, val uint8) {
 	case 0, 1: // RAM Enable, ROM Bank Number
 		if GetBit16(addr, 8) {
 			// ROM bank
-			e.mbc2RomBank = val & 0x0f
-			if e.mbc2RomBank == 0 {
-				e.mbc2RomBank = 1
+			mbc.mbc2RomBank = val & 0x0f
+			if mbc.mbc2RomBank == 0 {
+				mbc.mbc2RomBank = 1
 			}
-			e.mbc2RomBank = e.mbc2RomBank & (uint8(e.romHeader.RomBanks) - 1)
+			mbc.mbc2RomBank = mbc.mbc2RomBank & (uint8(mbc.RomBanks) - 1)
 		} else {
 			// Ram Enabled
 			if val&0x0f == 0x0A {
-				e.mbc2EnableRamBank = true
+				mbc.mbc2EnableRamBank = true
 			} else {
-				e.mbc2EnableRamBank = false
+				mbc.mbc2EnableRamBank = false
 			}
 		}
 	case 5: // 0xA000 - 0xBFFF
-		if e.mbc2EnableRamBank {
+		if mbc.mbc2EnableRamBank {
 			ramAddr := addr & 0x1ff
 			if addr <= 0xA1FF {
-				e.extrambank[ramAddr] = (val & 0x0F) | 0xF0
+				mbc.ram[ramAddr] = (val & 0x0F) | 0xF0
 			} else if addr <= 0xBFFF {
-				e.extrambank[ramAddr] = (val & 0x0F) | 0xF0
+				mbc.ram[ramAddr] = (val & 0x0F) | 0xF0
 			}
 		}
 	}
 }
 
-func (e *Emulator) memoryBankController2Read(addr uint16) uint8 {
+func (mbc *MBC2) Read(addr uint16) uint8 {
 	// In its default configuration, MBC1 supports up to 512 KiB ROM with up to 32 KiB of banked RAM.
 
 	switch addr >> 13 {
 	case 0, 1: // 0x0000–0x3FFF
 		// Contains the first 16 KiB of the ROM.
-		return e.rom0[addr&0x3fff]
+		return mbc.rom[addr&0x3fff]
 	case 2, 3: // 0x4000 - 0x7FFF
-		bankAddr := uint32(e.mbc2RomBank)<<14 + uint32(addr&0x3fff)
-		return e.rom0[bankAddr]
+		bankAddr := uint32(mbc.mbc2RomBank)<<14 + uint32(addr&0x3fff)
+		return mbc.rom[bankAddr]
 	case 5: // 0xA000 - 0xBFFF
 		// 512 half-bytes of RAM
-		if e.mbc2EnableRamBank {
+		if mbc.mbc2EnableRamBank {
 			ramAddr := addr & 0x1ff
 			if addr <= 0xA1FF {
-				return e.extrambank[ramAddr]
+				return mbc.ram[ramAddr]
 			} else if addr <= 0xBFFF {
-				return e.extrambank[ramAddr]
+				return mbc.ram[ramAddr]
 			} else {
 				return 0xFF
 			}
 		}
 		return 0xFF
-	}
-
-	return 0
-}
-
-func (e *Emulator) memoryBankController2(addr uint16, val uint8, write bool) uint8 {
-	// Max 256 KiB ROM and 512x4 bits RAM
-	// 1 "Register"
-	// - 0x0000-0x3FFF - RAM Enable, ROM Bank Number [write-only]
-
-	if write {
-		e.memoryBankController2Write(addr, val)
-	} else {
-		return e.memoryBankController2Read(addr)
 	}
 
 	return 0

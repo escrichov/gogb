@@ -7,7 +7,6 @@ import (
 func TestCreateDestroyEmulator(t *testing.T) {
 	e, err := NewEmulator(
 		"../assets/roms/bgbtest.gb",
-		"../saves/test.sav",
 		"",
 		"../assets/fonts/arial.ttf",
 		false,
@@ -21,7 +20,6 @@ func TestCreateDestroyEmulator(t *testing.T) {
 func RomTester(t *testing.T, romFilename, originalScreenshotFilename string, runCycles uint64) {
 	e, err := NewEmulator(
 		romFilename,
-		"../saves/test.sav",
 		"",
 		"../assets/fonts/arial.ttf",
 		false)

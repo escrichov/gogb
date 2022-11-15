@@ -9,7 +9,6 @@ func main() {
 
 	emulator, err := emulator.NewEmulator(
 		"./assets/roms/roms/supermarioland.gb",
-		"rom.sav",
 		//"./assets/roms/bootroms/dmg_boot.bin",
 		"",
 		"./assets/fonts/arial.ttf",
