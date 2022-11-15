@@ -19,8 +19,8 @@ func (e *Emulator) BessStore(filename string) error {
 	// Info Block
 	data.WriteString("INFO")
 	binary.Write(data, binary.LittleEndian, int32(0x12))
-	data.Write(e.rom.features.TitleBytes)    // ROM (Title)
-	data.Write(e.rom.features.CheckSumBytes) // ROM (Global checksum)
+	data.Write(e.rom.features.TitleBytes)          // ROM (Title)
+	data.Write(e.rom.features.GlobalChecksumBytes) // ROM (Global checksum)
 
 	// Core Block
 	data.WriteString("CORE")
@@ -137,8 +137,8 @@ func (e *Emulator) BessLoad(filename string) error {
 		return err
 	}
 	romTitle := blockContent[:16]
-	romCheckSum := binary.BigEndian.Uint16(blockContent[16:])
-	fmt.Println(blockName, blockSize, string(romTitle), romCheckSum)
+	romGlobalChecksum := binary.BigEndian.Uint16(blockContent[16:])
+	fmt.Println(blockName, blockSize, string(romTitle), romGlobalChecksum)
 
 	// Core Block
 	_, err = buffer.Read(blockNameTmp)
@@ -326,8 +326,8 @@ func (e *Emulator) BessLoad(filename string) error {
 		return fmt.Errorf("incorrect rom title: %v != %v", []byte(romTitle), []byte(e.rom.features.Title))
 	}
 
-	if romCheckSum != e.rom.features.CheckSum {
-		return fmt.Errorf("incorrect rom checksum: %d != %d", romCheckSum, e.rom.features.CheckSum)
+	if romGlobalChecksum != e.rom.features.GlobalChecksum {
+		return fmt.Errorf("incorrect rom checksum: %d != %d", romGlobalChecksum, e.rom.features.GlobalChecksum)
 	}
 
 	if majorVersion != 1 {

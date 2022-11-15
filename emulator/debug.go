@@ -88,6 +88,14 @@ func (e *Emulator) PrintCartridge() {
 			"Ram Banks: %d (8KiB each)\n\t"+
 			"Battery: %t\n\t"+
 			"Ram Filename: %s\n\t"+
+			"Header Checksum: %x (Ok: %t)\n\t"+
+			"Global Checksum: %x (Ok: %t)\n\t"+
+			"Logo ok: %t\n\t"+
+			"License Code: %x, %s\n\t"+
+			"Destination code: %x, %s\n\t"+
+			"Mask ROM version number: %x\n\t"+
+			"Manufacturer code: %s\n\t"+
+			"SGB flag: %x\n\t"+
 			"CGB flag: %x\n",
 		e.rom.features.Title,
 		e.rom.features.CartridgeTypeName,
@@ -103,7 +111,19 @@ func (e *Emulator) PrintCartridge() {
 		mbcFeatures.RamBanks,
 		mbcFeatures.HasBattery,
 		mbcFeatures.RamFilename,
+		e.rom.features.GlobalChecksum,
+		e.rom.features.GlobalChecksumOk,
+		e.rom.features.HeaderChecksum,
+		e.rom.features.HeaderChecksumOk,
+		e.rom.features.LogoOk,
+		e.rom.features.LicenseCode,
+		e.rom.features.LicenseCodeName,
+		e.rom.features.DestinationCode,
+		e.rom.features.DestinationCodeName,
+		e.rom.features.MaskROMVersionNumber,
+		e.rom.features.ManufacturerCode,
 		e.rom.features.ColorGB,
+		e.rom.features.GBSGBIndicator,
 	)
 	fmt.Println(cartridge)
 }
