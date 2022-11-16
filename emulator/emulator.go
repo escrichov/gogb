@@ -18,63 +18,44 @@ type Emulator struct {
 	isHaltBugActive                        bool
 	isHaltBugEIActive                      bool
 
-	workRam  [0x4000]uint8
-	videoRam [0x2000]uint8
-
 	romFilename     string
 	bootRomFilename string
 
-	io      [0x200]uint8
-	ppuDot  int
-	bootRom []byte
-
-	// Rom
-	rom *Rom
-
-	lcdcControl LCDControl
-	lcdStatus   LCDStatus
-
-	// Timers
-	internalTimer                  uint16
-	timaUpdateWithTMADelayedCycles uint64
+	cpu    CPU
+	mem    Memory
+	ppu    PPU
+	timer  Timer
+	rom    *Rom
+	window *Window
 
 	// Serial
 	serialTransferedBits uint8
-
-	palette []int32
-
-	cpu CPU
-
-	// SDL Window
-	window *Window
 
 	numInstructions uint64
 	stop            bool
 	pause           bool
 	reset           bool
-	bootRomEnabled  bool
 }
 
 func NewEmulator(romFilename, bootRomFilename, fontFilename string, showWindow bool) (*Emulator, error) {
 	var err error
 
 	emulator := Emulator{
-		ppuDot:          32,
-		palette:         []int32{-1, -23197, -65536, -1 << 24, -1, -8092417, -12961132, -1 << 24},
 		romFilename:     romFilename,
 		bootRomFilename: bootRomFilename,
-		internalTimer:   8,
+		ppu:             PPU{ppuDot: 32, palette: []int32{-1, -23197, -65536, -1 << 24, -1, -8092417, -12961132, -1 << 24}},
+		timer:           Timer{internalTimer: 8},
 	}
+	emulator.mem.emulator = &emulator
+	emulator.timer.emulator = &emulator
 
 	if bootRomFilename == "" {
 		emulator.initializeBootRomValues()
-		emulator.bootRomEnabled = false
 	} else {
 		err := emulator.loadBootRom(bootRomFilename)
 		if err != nil {
 			return nil, err
 		}
-		emulator.bootRomEnabled = true
 	}
 
 	emulator.rom, err = newRomFromFile(romFilename)
@@ -110,7 +91,7 @@ func (e *Emulator) RunTest(numCycles uint64) {
 			e.CPURun()
 		}
 
-		e.incrementTimers()
+		e.timer.incrementTimers(uint16(e.cycles - e.prevCycles))
 		e.serialTransfer()
 
 		renderFrame := e.PPURun()
@@ -149,7 +130,7 @@ func (e *Emulator) Run() {
 			e.CPURun()
 		}
 
-		e.incrementTimers()
+		e.timer.incrementTimers(uint16(e.cycles - e.prevCycles))
 		e.serialTransfer()
 
 		renderFrame := e.PPURun()
@@ -175,7 +156,7 @@ func (e *Emulator) Reset() error {
 	var err error
 	e.reset = false
 
-	if e.bootRomEnabled {
+	if e.mem.bootRomEnabled {
 		err := e.loadBootRom(e.bootRomFilename)
 		if err != nil {
 			return err

@@ -1,19 +1,19 @@
 package emulator
 
 func (e *Emulator) getSerialTransferData() uint8 { // 0xFF01
-	return e.io[257]
+	return e.mem.io[257]
 }
 
 func (e *Emulator) setSerialTransferData(value uint8) { // 0xFF01
-	e.io[257] = value
+	e.mem.io[257] = value
 }
 
 func (e *Emulator) getSerialTransferControl() uint8 { // 0xFF02
-	return e.io[258]
+	return e.mem.io[258]
 }
 
 func (e *Emulator) setSerialTransferControl(value uint8) { // 0xFF02
-	e.io[258] = value
+	e.mem.io[258] = value
 }
 
 func (e *Emulator) serialTransfer() {
@@ -31,7 +31,7 @@ func (e *Emulator) serialTransfer() {
 	// In Non-CGB Mode the Game Boy supplies an internal clock of 8192Hz
 	// 4194304Hz / 8192Hz = 512
 	clockFrequency := uint16(512)
-	increases := numDetectFallingEdges(e.internalTimer, e.internalTimer+cyclesElapsed, clockFrequency)
+	increases := e.timer.numDetectFallingEdges(cyclesElapsed, clockFrequency)
 	if shiftClock {
 		// Master mode
 		if transferStartFlag && increases > 0 {
@@ -55,6 +55,6 @@ func (e *Emulator) serialTransfer() {
 	if transferCompleted {
 		// Clear bit 7 of SC
 		e.setSerialTransferControl(SetBit8(sc, 7, false))
-		e.requestInterruptSerial()
+		e.mem.requestInterruptSerial()
 	}
 }

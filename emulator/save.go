@@ -35,10 +35,10 @@ func (e *Emulator) BessStore(filename string) error {
 	binary.Write(data, binary.LittleEndian, e.cpu.HL.value)
 	binary.Write(data, binary.LittleEndian, e.cpu.SP.value)
 	binary.Write(data, binary.LittleEndian, e.IME)
-	binary.Write(data, binary.LittleEndian, e.GetIF()) // The value of the IE register
-	binary.Write(data, binary.LittleEndian, e.halt)    // Execution state (0 = running; 1 = halted; 2 = stopped)
-	binary.Write(data, binary.LittleEndian, uint8(0))  // Reserved, must be 0
-	data.Write(e.io[0x100:0x180])                      // Memory-mapped Registers
+	binary.Write(data, binary.LittleEndian, e.mem.GetIF()) // The value of the IE register
+	binary.Write(data, binary.LittleEndian, e.halt)        // Execution state (0 = running; 1 = halted; 2 = stopped)
+	binary.Write(data, binary.LittleEndian, uint8(0))      // Reserved, must be 0
+	data.Write(e.mem.io[0x100:0x180])                      // Memory-mapped Registers
 
 	binary.Write(data, binary.LittleEndian, int32(0x4000)) // The size of RAM (32-bit integer)
 	binary.Write(data, binary.LittleEndian, int32(0))      // The offset of RAM from file start (32-bit integer)
@@ -381,7 +381,7 @@ func (e *Emulator) BessLoad(filename string) error {
 	e.cpu.SetDE(de)
 	e.cpu.SetHL(hl)
 	e.cpu.SetSP(sp)
-	e.SetIF(ie)
+	e.mem.SetIF(ie)
 	e.IME = ime
 	e.halt = halt
 

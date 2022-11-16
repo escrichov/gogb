@@ -48,7 +48,7 @@ func (e *Emulator) GetDebugFlags() string {
 
 func (e *Emulator) PrintTimers() {
 	timers := fmt.Sprintf("Timers\n\tDIV: %x\n\tTAC: %x\n\tTIMA: %x\n\tTMA: %x\n\tInternal Timer: %x\n",
-		e.GetDIV(), e.io[263], e.GetTIMA(), e.GetTMA(), e.internalTimer,
+		e.mem.GetDIV(), e.mem.io[263], e.mem.GetTIMA(), e.mem.GetTMA(), e.timer.internalTimer,
 	)
 	fmt.Println(timers)
 }

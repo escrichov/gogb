@@ -8,16 +8,19 @@ import (
 func (e *Emulator) loadBootRom(fileName string) error {
 	var err error
 
-	e.bootRom, err = os.ReadFile(fileName)
+	e.mem.bootRom, err = os.ReadFile(fileName)
 	if err != nil {
 		log.Println("BootRom file not found:", err)
 		return err
 	}
+	e.mem.bootRomEnabled = true
 
 	return nil
 }
 
 func (e *Emulator) initializeBootRomValues() {
+	e.mem.bootRomEnabled = false
+
 	e.cpu.PC = 0x0100
 	e.cpu.SetSP(0xfffe)
 	e.cpu.SetA(0x01)
@@ -30,10 +33,10 @@ func (e *Emulator) initializeBootRomValues() {
 	e.cpu.SetL(0x4d)
 
 	e.IME = 0
-	e.SetLCDC(0x91)
-	e.SetLY(0)
-	e.SetDIV(0xab)
-	e.SetInternalTimer(0xabcc) // Or 0xabc4 if not initialized in 8 cycles at startup
+	e.mem.SetLCDC(0x91)
+	e.mem.SetLY(0)
+	e.mem.SetDIV(0xab)
+	e.timer.SetInternalTimer(0xabcc) // Or 0xabc4 if not initialized in 8 cycles at startup
 
 	//e.cpu.PC = 256
 	//e.SetLCDC(145)

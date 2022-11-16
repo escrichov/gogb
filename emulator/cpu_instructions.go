@@ -27,7 +27,7 @@ func (e *Emulator) instCall(addr uint16) {
 }
 
 func (e *Emulator) instHalt() {
-	if e.hasPendingInterrupts() {
+	if e.mem.hasPendingInterrupts() {
 		e.isInterruptPendingInFirstHaltExecution = true
 	}
 	if e.delayedActivateIMEatInstruction == e.numInstructions {
@@ -48,7 +48,7 @@ func (e *Emulator) CPURun() {
 	switch opcode {
 	case 0: // NOP
 	case 8: // LD (u16), SP
-		e.write16(e.popPC16(), e.cpu.GetSP())
+		e.mem.write16(e.popPC16(), e.cpu.GetSP())
 	case 16: // STOP
 		// TODO: improve stop
 		// Timing is 1 Cycle
@@ -82,10 +82,10 @@ func (e *Emulator) CPURun() {
 		e.tick()
 	case 2, 18, 34, 50: // LD (r16), A
 		number := (opcode >> 4) & 0x3
-		e.write8(e.cpu.r16Group2Get(number), e.cpu.GetA())
+		e.mem.write8(e.cpu.r16Group2Get(number), e.cpu.GetA())
 	case 10, 26, 42, 58: // LD A, (r16)
 		number := (opcode >> 4) & 0x3
-		e.cpu.SetA(e.read8(e.cpu.r16Group2Get(number)))
+		e.cpu.SetA(e.mem.read8(e.cpu.r16Group2Get(number)))
 	case 3, 19, 35, 51: // INC r16
 		number := (opcode >> 4) & 0x3
 		r16 := e.cpu.r16Group1Get(number)
@@ -292,7 +292,7 @@ func (e *Emulator) CPURun() {
 	case 224: // LD (FF00 + u8), A
 		u8 := e.popPC()
 		addr := 0xFF00 + uint16(u8)
-		e.write8(addr, e.cpu.GetA())
+		e.mem.write8(addr, e.cpu.GetA())
 	case 232: // ADD SP, i8
 		i8 := int8(e.popPC())
 		sp := e.cpu.GetSP()
@@ -308,7 +308,7 @@ func (e *Emulator) CPURun() {
 	case 240: // LD A, (FF00 + u8)
 		u8 := e.popPC()
 		addr := 0xFF00 + uint16(u8)
-		e.cpu.SetA(e.read8(addr))
+		e.cpu.SetA(e.mem.read8(addr))
 	case 248: // LD HL, SP + i8
 		i8 := int8(e.popPC())
 		sp := e.cpu.GetSP()
@@ -342,16 +342,16 @@ func (e *Emulator) CPURun() {
 		}
 	case 226: // LD (FF00+C), A
 		addr := 0xFF00 + uint16(e.cpu.GetC())
-		e.write8(addr, e.cpu.GetA())
+		e.mem.write8(addr, e.cpu.GetA())
 	case 234: // LD (u16), A
 		u16 := e.popPC16()
-		e.write8(u16, e.cpu.GetA())
+		e.mem.write8(u16, e.cpu.GetA())
 	case 242: // LD A, (0xFF00+C)
 		addr := 0xFF00 + uint16(e.cpu.GetC())
-		e.cpu.SetA(e.read8(addr))
+		e.cpu.SetA(e.mem.read8(addr))
 	case 250: // LD A, (u16)
 		u16 := e.popPC16()
-		val := e.read8(u16)
+		val := e.mem.read8(u16)
 		e.cpu.SetA(val)
 	case 195: // JP u16
 		e.cpu.PC = e.popPC16()

@@ -20,6 +20,6 @@ func (e *Emulator) ActivateCode(code int) {
 		address := binary.BigEndian.Uint16(bs)
 		value := uint8(code >> 16)
 
-		e.write8(address, value)
+		e.mem.write8(address, value)
 	}
 }

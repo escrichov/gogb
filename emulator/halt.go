@@ -15,7 +15,7 @@ func (e *Emulator) HaltRun() {
 		}
 	}
 
-	if e.hasPendingInterrupts() {
+	if e.mem.hasPendingInterrupts() {
 		e.halt = 0
 	}
 }

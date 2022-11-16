@@ -316,7 +316,7 @@ func (cpu *CPU) r16Group3Set(number uint8, val uint16) {
 }
 
 func (e *Emulator) popPC() uint8 {
-	result := e.read8(e.cpu.PC)
+	result := e.mem.read8(e.cpu.PC)
 	e.cpu.PC++
 
 	if e.isHaltBugActive {
@@ -349,7 +349,7 @@ func (e *Emulator) r8Get(number uint8) uint8 {
 	case 5:
 		return e.cpu.GetL()
 	case 6:
-		return e.read8(e.cpu.GetHL())
+		return e.mem.read8(e.cpu.GetHL())
 	case 7:
 		return e.cpu.GetA()
 	default:
@@ -372,7 +372,7 @@ func (e *Emulator) r8Set(number uint8, val uint8) {
 	case 5:
 		e.cpu.SetL(val)
 	case 6:
-		e.write8(e.cpu.GetHL(), val)
+		e.mem.write8(e.cpu.GetHL(), val)
 	case 7:
 		e.cpu.SetA(val)
 	default:
@@ -382,17 +382,17 @@ func (e *Emulator) r8Set(number uint8, val uint8) {
 func (e *Emulator) tick() {
 	e.cycles += 4
 
-	if e.timaUpdateWithTMADelayedCycles == e.cycles {
-		e.reloadTIMAwithTMA()
+	if e.timer.timaUpdateWithTMADelayedCycles == e.cycles {
+		e.timer.reloadTIMAwithTMA()
 	}
 }
 
 func (e *Emulator) push(val uint16) {
 	sp := e.cpu.GetSP()
 	sp--
-	e.write8(sp, uint8(val>>8))
+	e.mem.write8(sp, uint8(val>>8))
 	sp--
-	e.write8(sp, uint8(val))
+	e.mem.write8(sp, uint8(val))
 	e.cpu.SetSP(sp)
 
 	e.tick()
@@ -400,7 +400,7 @@ func (e *Emulator) push(val uint16) {
 
 func (e *Emulator) pop() uint16 {
 	sp := e.cpu.GetSP()
-	result := e.read16(sp)
+	result := e.mem.read16(sp)
 	e.cpu.SetSP(sp + 2)
 
 	return result
