@@ -35,6 +35,6 @@ func (e *Emulator) manageInterrupts() {
 	}
 
 	if interruptType.address == InterruptVBlankAddress {
-		e.loadGamesharkCodes()
+		e.loadGameSharkCodes()
 	}
 }

@@ -154,9 +154,11 @@ func (m *Memory) read8(addr uint16) uint8 {
 		if m.bootRomEnabled && addr <= 0xFF {
 			return m.bootRom[addr]
 		}
-		return m.rom.controller.Read(addr)
+		value := m.rom.controller.Read(addr)
+		return m.emulator.getGameGenieValue(addr, value)
 	case 2, 3: // 0x4000 - 0x7FFF, ROM Bank 01~NN
-		return m.rom.controller.Read(addr)
+		value := m.rom.controller.Read(addr)
+		return m.emulator.getGameGenieValue(addr, value)
 	case 4: // 0x8000 - 0x9FFF, Video RAM (VRAM)
 		addr &= 0x1fff
 		return m.videoRam[addr]

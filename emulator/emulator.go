@@ -27,6 +27,9 @@ type Emulator struct {
 	timer  Timer
 	window *Window
 
+	GameSharkCodes []*GameSharkCode
+	GameGenieCodes []*GameGenieCode
+
 	// Serial
 	serialTransferedBits uint8
 
@@ -51,7 +54,7 @@ func NewEmulator(romFilename, bootRomFilename, fontFilename string, showWindow b
 	if bootRomFilename == "" {
 		emulator.initializeBootRomValues()
 	} else {
-		err := emulator.loadBootRom(bootRomFilename)
+		err := emulator.mem.loadBootRom(bootRomFilename)
 		if err != nil {
 			return nil, err
 		}
@@ -156,7 +159,7 @@ func (e *Emulator) Reset() error {
 	e.reset = false
 
 	if e.mem.bootRomEnabled {
-		err := e.loadBootRom(e.bootRomFilename)
+		err := e.mem.loadBootRom(e.bootRomFilename)
 		if err != nil {
 			return err
 		}

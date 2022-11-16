@@ -5,15 +5,15 @@ import (
 	"os"
 )
 
-func (e *Emulator) loadBootRom(fileName string) error {
+func (mem *Memory) loadBootRom(fileName string) error {
 	var err error
 
-	e.mem.bootRom, err = os.ReadFile(fileName)
+	mem.bootRom, err = os.ReadFile(fileName)
 	if err != nil {
 		log.Println("BootRom file not found:", err)
 		return err
 	}
-	e.mem.bootRomEnabled = true
+	mem.bootRomEnabled = true
 
 	return nil
 }

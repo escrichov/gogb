@@ -7,7 +7,7 @@ import (
 
 func main() {
 
-	emulator, err := emulator.NewEmulator(
+	emu, err := emulator.NewEmulator(
 		"./assets/roms/roms/pokeblue.gb",
 		//"./assets/roms/bootroms/dmg_boot.bin",
 		"",
@@ -16,12 +16,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer emulator.Destroy()
+	defer emu.Destroy()
 
 	//err = emulator.BessLoad("rom.s3")
 	//if err != nil {
 	//	log.Fatal(err)
 	//}
 
-	emulator.Run()
+	emu.Run()
 }

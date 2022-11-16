@@ -32,6 +32,116 @@ type BaseMBC struct {
 	*MBCFeatures
 }
 
+func getMemoryBankControllerByCartridgeType(cartridgeType uint8) int {
+	memoryBankControllerNumber := -1
+	switch cartridgeType {
+	case 0: // ROM ONLY
+		memoryBankControllerNumber = 0
+	case 1: // MBC1
+		memoryBankControllerNumber = 1
+	case 2: // MBC1+RAM
+		memoryBankControllerNumber = 1
+	case 3: // MBC1+RAM+BATTERY
+		memoryBankControllerNumber = 1
+	case 5:
+		memoryBankControllerNumber = 2
+	case 6:
+		memoryBankControllerNumber = 2
+	case 8:
+		memoryBankControllerNumber = 0
+	case 9:
+		memoryBankControllerNumber = 0
+	case 0xB, 0xC:
+		memoryBankControllerNumber = 1
+	case 0x0D:
+		memoryBankControllerNumber = 1
+	case 0x11, 0x12:
+		memoryBankControllerNumber = 3
+	case 0x0F, 0x10, 0x13:
+		memoryBankControllerNumber = 3
+	case 0x19, 0x1A, 0x1C, 0x1D:
+		memoryBankControllerNumber = 5
+	case 0x1B, 0x1E:
+		memoryBankControllerNumber = 5
+	case 0x20:
+		memoryBankControllerNumber = 6
+	case 0x22:
+		memoryBankControllerNumber = 7
+	}
+
+	return memoryBankControllerNumber
+}
+
+func hasBattery(cartridgeType uint8) bool {
+	switch cartridgeType {
+	case 0x03: // MBC1+RAM+BATTERY
+		return true
+	case 0x06: // MBC2+BATTERY
+		return true
+	case 0x09: // ROM+RAM+BATTERY
+		return true
+	case 0x0D: // MMM01+RAM+BATTERY
+		return true
+	case 0x0F: // MBC3+TIMER+BATTERY
+		return true
+	case 0x10: // MBC3+TIMER+RAM+BATTERY
+		return true
+	case 0x13: // MBC3+RAM+BATTERY
+		return true
+	case 0x1B: // MBC5+RAM+BATTERY
+		return true
+	case 0x1E: // MBC5+RUMBLE+RAM+BATTERY
+		return true
+	case 0x22: // MBC7+SENSOR+RUMBLE+RAM+BATTERY
+		return true
+	case 0xFF: // HuC1+RAM+BATTERY
+		return true
+	}
+
+	return false
+}
+
+func isRamAllowed(cartridgeType uint8) bool {
+	switch cartridgeType {
+	case 0x02: // MBC1+RAM
+		return true
+	case 0x03: // MBC1+RAM+BATTERY
+		return true
+	case 0x05: // MBC2 (It always has ram)
+		return true
+	case 0x06: // MBC2+BATTERY (It always has ram)
+		return true
+	case 0x08: // ROM+RAM
+		return true
+	case 0x09: // ROM+RAM+BATTERY
+		return true
+	case 0x0C: // MMM01+RAM
+		return true
+	case 0x0D: // MMM01+RAM+BATTERY
+		return true
+	case 0x10: // MBC3+TIMER+RAM+BATTERY
+		return true
+	case 0x12: // MBC3+RAM
+		return true
+	case 0x13: // MBC3+RAM+BATTERY
+		return true
+	case 0x1A: // MBC5+RAM
+		return true
+	case 0x1B: // MBC5+RAM+BATTERY
+		return true
+	case 0x1D: // MBC5+RUMBLE+RAM
+		return true
+	case 0x1E: // MBC5+RUMBLE+RAM+BATTERY
+		return true
+	case 0x22: // MBC7+SENSOR+RUMBLE+RAM+BATTERY
+		return true
+	case 0xFF: // HuC1+RAM+BATTERY
+		return true
+	}
+
+	return false
+}
+
 func newBaseMBC(romData []byte, romFilename string) (*BaseMBC, error) {
 	var err error
 	var mbc = BaseMBC{rom: romData}
