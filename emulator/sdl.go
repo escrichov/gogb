@@ -345,7 +345,7 @@ func (w *Window) SetFramebufferColor(color int32) {
 }
 
 func (w *Window) ToggleVsync() {
-	w.renderer.RenderSetVSync(!w.vsyncEnabled)
+	w.SetVsync(!w.vsyncEnabled)
 }
 
 func (w *Window) SetVsync(active bool) {
