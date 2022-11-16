@@ -23,51 +23,51 @@ type InterruptType struct {
 	bit     uint8
 }
 
-func (e *Memory) SetIF(value uint8) {
-	e.io[271] = value
+func (m *Memory) SetIF(value uint8) {
+	m.io[271] = value
 }
 
-func (e *Memory) GetIF() uint8 {
-	return e.io[271]
+func (m *Memory) GetIF() uint8 {
+	return m.io[271]
 }
 
-func (e *Memory) requestInterruptVBlank() {
-	e.SetIF(SetBit8(e.GetIF(), InterruptVBlankBit, true))
+func (m *Memory) requestInterruptVBlank() {
+	m.SetIF(SetBit8(m.GetIF(), InterruptVBlankBit, true))
 }
 
-func (e *Memory) requestInterruptLCDStat() {
-	e.SetIF(SetBit8(e.GetIF(), InterruptLCDStatBit, true))
+func (m *Memory) requestInterruptLCDStat() {
+	m.SetIF(SetBit8(m.GetIF(), InterruptLCDStatBit, true))
 }
 
-func (e *Memory) requestInterruptTimer() {
-	e.SetIF(SetBit8(e.GetIF(), InterruptTimerBit, true))
+func (m *Memory) requestInterruptTimer() {
+	m.SetIF(SetBit8(m.GetIF(), InterruptTimerBit, true))
 }
 
-func (e *Memory) requestInterruptSerial() {
-	e.SetIF(SetBit8(e.GetIF(), InterruptSerialBit, true))
+func (m *Memory) requestInterruptSerial() {
+	m.SetIF(SetBit8(m.GetIF(), InterruptSerialBit, true))
 }
 
-func (e *Memory) requestInterruptJoypad() {
-	e.SetIF(SetBit8(e.GetIF(), InterruptJoypadBit, true))
+func (m *Memory) requestInterruptJoypad() {
+	m.SetIF(SetBit8(m.GetIF(), InterruptJoypadBit, true))
 }
 
-func (e *Memory) SetIE(value uint8) {
-	e.io[511] = value
+func (m *Memory) SetIE(value uint8) {
+	m.io[511] = value
 }
 
-func (e *Memory) GetIE() uint8 {
-	return e.io[511]
+func (m *Memory) GetIE() uint8 {
+	return m.io[511]
 }
 
-func (e *Memory) hasPendingInterrupts() bool {
-	interruptFlag := e.GetIF()
-	interruptEnable := e.GetIE()
+func (m *Memory) hasPendingInterrupts() bool {
+	interruptFlag := m.GetIF()
+	interruptEnable := m.GetIE()
 	pendingInterrupts := interruptFlag&interruptEnable != 0
 	return pendingInterrupts
 }
 
-func (e *Memory) getInterruptType() InterruptType {
-	interruptFlag := e.GetIF() & e.GetIE()
+func (m *Memory) getInterruptType() InterruptType {
+	interruptFlag := m.GetIF() & m.GetIE()
 	if GetBit(interruptFlag, 0) { // VBlank
 		return InterruptType{address: InterruptVBlankAddress, bit: InterruptVBlankBit}
 	} else if GetBit(interruptFlag, 1) { // LCD STAT

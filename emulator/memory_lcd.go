@@ -20,64 +20,64 @@ type LCDStatus struct {
 	ModeFlag                       uint8 // Bit 1-0, 0: HBlank, 1: VBlank, 2: Searching OAM, 3: Transferring Data to LCD Controller
 }
 
-func (e *Memory) SetLY(value uint8) {
-	e.io[324] = value
+func (m *Memory) SetLY(value uint8) {
+	m.io[324] = value
 }
 
-func (e *Memory) GetLY() uint8 {
-	return e.io[324]
+func (m *Memory) GetLY() uint8 {
+	return m.io[324]
 }
 
-func (e *Memory) GetLYC() uint8 {
-	return e.io[325]
+func (m *Memory) GetLYC() uint8 {
+	return m.io[325]
 }
 
-func (e *Memory) GetLCDC() *LCDControl {
-	return &e.lcdcControl
+func (m *Memory) GetLCDC() *LCDControl {
+	return &m.lcdcControl
 }
 
-func (e *Memory) SetLCDC(value uint8) {
-	e.io[320] = value
-	e.lcdcControl.LCDPPUEnable = GetBit(value, 7)
-	e.lcdcControl.WindowTileMapArea = GetBit(value, 6)
-	e.lcdcControl.WindowEnable = GetBit(value, 5)
-	e.lcdcControl.BgWindowTileDataArea = GetBit(value, 4)
-	e.lcdcControl.BgTileMapArea = GetBit(value, 3)
-	e.lcdcControl.ObjSize = GetBit(value, 2)
-	e.lcdcControl.ObjEnable = GetBit(value, 1)
-	e.lcdcControl.BgWindowEnablePriority = GetBit(value, 0)
+func (m *Memory) SetLCDC(value uint8) {
+	m.io[320] = value
+	m.lcdcControl.LCDPPUEnable = GetBit(value, 7)
+	m.lcdcControl.WindowTileMapArea = GetBit(value, 6)
+	m.lcdcControl.WindowEnable = GetBit(value, 5)
+	m.lcdcControl.BgWindowTileDataArea = GetBit(value, 4)
+	m.lcdcControl.BgTileMapArea = GetBit(value, 3)
+	m.lcdcControl.ObjSize = GetBit(value, 2)
+	m.lcdcControl.ObjEnable = GetBit(value, 1)
+	m.lcdcControl.BgWindowEnablePriority = GetBit(value, 0)
 }
 
-func (e *Memory) SaveLCDC() {
-	e.io[320] = (BoolToUint8(e.lcdcControl.LCDPPUEnable) << 7) |
-		(BoolToUint8(e.lcdcControl.WindowTileMapArea) << 6) |
-		(BoolToUint8(e.lcdcControl.WindowEnable) << 5) |
-		(BoolToUint8(e.lcdcControl.BgWindowTileDataArea) << 4) |
-		(BoolToUint8(e.lcdcControl.BgTileMapArea) << 3) |
-		(BoolToUint8(e.lcdcControl.ObjSize) << 2) |
-		(BoolToUint8(e.lcdcControl.ObjEnable) << 1) |
-		BoolToUint8(e.lcdcControl.BgWindowEnablePriority)
+func (m *Memory) SaveLCDC() {
+	m.io[320] = (BoolToUint8(m.lcdcControl.LCDPPUEnable) << 7) |
+		(BoolToUint8(m.lcdcControl.WindowTileMapArea) << 6) |
+		(BoolToUint8(m.lcdcControl.WindowEnable) << 5) |
+		(BoolToUint8(m.lcdcControl.BgWindowTileDataArea) << 4) |
+		(BoolToUint8(m.lcdcControl.BgTileMapArea) << 3) |
+		(BoolToUint8(m.lcdcControl.ObjSize) << 2) |
+		(BoolToUint8(m.lcdcControl.ObjEnable) << 1) |
+		BoolToUint8(m.lcdcControl.BgWindowEnablePriority)
 }
 
-func (e *Memory) GetLCDStatus() *LCDStatus {
-	return &e.lcdStatus
+func (m *Memory) GetLCDStatus() *LCDStatus {
+	return &m.lcdStatus
 }
 
-func (e *Memory) SetLCDStatus(value uint8) {
-	e.io[321] = value
-	e.lcdStatus.LYCLYSTATInterruptSource = GetBit(value, 6)
-	e.lcdStatus.Mode2OAMSTATInterruptSource = GetBit(value, 5)
-	e.lcdStatus.Mode1VBlankSTATInterruptSource = GetBit(value, 4)
-	e.lcdStatus.Mode0HBlankSTATInterruptSource = GetBit(value, 3)
-	e.lcdStatus.LYCLYFlag = GetBit(value, 2)
-	e.lcdStatus.ModeFlag = value & 0x3
+func (m *Memory) SetLCDStatus(value uint8) {
+	m.io[321] = value
+	m.lcdStatus.LYCLYSTATInterruptSource = GetBit(value, 6)
+	m.lcdStatus.Mode2OAMSTATInterruptSource = GetBit(value, 5)
+	m.lcdStatus.Mode1VBlankSTATInterruptSource = GetBit(value, 4)
+	m.lcdStatus.Mode0HBlankSTATInterruptSource = GetBit(value, 3)
+	m.lcdStatus.LYCLYFlag = GetBit(value, 2)
+	m.lcdStatus.ModeFlag = value & 0x3
 }
 
-func (e *Memory) SaveLCDStatus() {
-	e.io[321] = (BoolToUint8(e.lcdStatus.LYCLYSTATInterruptSource) << 6) |
-		(BoolToUint8(e.lcdStatus.Mode2OAMSTATInterruptSource) << 5) |
-		(BoolToUint8(e.lcdStatus.Mode1VBlankSTATInterruptSource) << 4) |
-		(BoolToUint8(e.lcdStatus.Mode0HBlankSTATInterruptSource) << 3) |
-		(BoolToUint8(e.lcdStatus.LYCLYFlag) << 2) |
-		e.lcdStatus.ModeFlag
+func (m *Memory) SaveLCDStatus() {
+	m.io[321] = (BoolToUint8(m.lcdStatus.LYCLYSTATInterruptSource) << 6) |
+		(BoolToUint8(m.lcdStatus.Mode2OAMSTATInterruptSource) << 5) |
+		(BoolToUint8(m.lcdStatus.Mode1VBlankSTATInterruptSource) << 4) |
+		(BoolToUint8(m.lcdStatus.Mode0HBlankSTATInterruptSource) << 3) |
+		(BoolToUint8(m.lcdStatus.LYCLYFlag) << 2) |
+		m.lcdStatus.ModeFlag
 }
