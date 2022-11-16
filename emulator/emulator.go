@@ -1,8 +1,6 @@
 package emulator
 
 import (
-	"github.com/veandco/go-sdl2/sdl"
-	"github.com/veandco/go-sdl2/ttf"
 	"time"
 )
 
@@ -33,10 +31,8 @@ type Emulator struct {
 	// Rom
 	rom *Rom
 
-	keyboardState []uint8
-	frameBuffer   [WIDTH * HEIGHT]int32
-	lcdcControl   LCDControl
-	lcdStatus     LCDStatus
+	lcdcControl LCDControl
+	lcdStatus   LCDStatus
 
 	// Timers
 	internalTimer                  uint16
@@ -49,25 +45,10 @@ type Emulator struct {
 
 	cpu CPU
 
-	window                    *sdl.Window
-	surface                   *sdl.Surface
-	renderer                  *sdl.Renderer
-	texture                   *sdl.Texture
-	font                      *ttf.Font
-	showWindow                bool
-	frames                    uint64
-	framesPerSecond           uint32
-	framesCurrentSecond       uint32
-	deltaTime                 uint64
-	millisecondsPreviousFrame uint64
-	consoleMessage            string
-	showMessage               bool
-	consoleMessageDuration    time.Duration
-	consoleMessageStart       time.Time
+	// SDL Window
+	window *Window
 
 	numInstructions uint64
-	vsyncEnabled    bool
-	showFPS         bool
 	stop            bool
 	pause           bool
 	reset           bool
@@ -80,12 +61,8 @@ func NewEmulator(romFilename, bootRomFilename, fontFilename string, showWindow b
 	emulator := Emulator{
 		ppuDot:          32,
 		palette:         []int32{-1, -23197, -65536, -1 << 24, -1, -8092417, -12961132, -1 << 24},
-		vsyncEnabled:    true,
-		showFPS:         false,
-		showMessage:     false,
 		romFilename:     romFilename,
 		bootRomFilename: bootRomFilename,
-		showWindow:      showWindow,
 		internalTimer:   8,
 	}
 
@@ -100,20 +77,17 @@ func NewEmulator(romFilename, bootRomFilename, fontFilename string, showWindow b
 		emulator.bootRomEnabled = true
 	}
 
-	// Framebuffer set to black
-	for i, _ := range emulator.frameBuffer {
-		emulator.frameBuffer[i] = 0
-	}
-
 	emulator.rom, err = newRomFromFile(romFilename)
 	if err != nil {
 		return nil, err
 	}
 
-	err = emulator.initializeSDL(ToCamel(emulator.rom.features.Title), fontFilename, 4)
-	if err != nil {
-		return nil, err
-	}
+	emulator.window, err = newWindow(
+		ToCamel(emulator.rom.features.Title),
+		fontFilename,
+		4.0,
+		showWindow,
+	)
 
 	emulator.PrintCartridge()
 
@@ -121,10 +95,7 @@ func NewEmulator(romFilename, bootRomFilename, fontFilename string, showWindow b
 }
 
 func (e *Emulator) Destroy() {
-	e.texture.Destroy()
-	e.renderer.Destroy()
 	e.window.Destroy()
-	sdl.Quit()
 }
 
 func (e *Emulator) RunTest(numCycles uint64) {
@@ -144,12 +115,12 @@ func (e *Emulator) RunTest(numCycles uint64) {
 
 		renderFrame := e.PPURun()
 		if renderFrame {
-			e.renderFrame()
+			e.window.renderFrame()
 		}
 
 		// Paused state
 		for e.pause {
-			e.renderFrame()
+			e.window.renderFrame()
 		}
 
 		if e.stop {
@@ -183,13 +154,13 @@ func (e *Emulator) Run() {
 
 		renderFrame := e.PPURun()
 		if renderFrame {
-			e.renderFrame()
+			e.window.renderFrame()
 			e.manageKeyboardEvents()
 		}
 
 		// Paused state
 		for e.pause {
-			e.renderFrame()
+			e.window.renderFrame()
 			e.manageKeyboardEvents()
 			time.Sleep(time.Millisecond * 1000 / 60.0)
 		}
@@ -214,9 +185,7 @@ func (e *Emulator) Reset() error {
 	}
 
 	// Framebuffer set to black
-	for i, _ := range e.frameBuffer {
-		e.frameBuffer[i] = 0
-	}
+	e.window.SetFramebufferColor(0)
 
 	e.rom, err = newRomFromFile(e.romFilename)
 	if err != nil {

@@ -36,6 +36,11 @@ type RomFeatures struct {
 	HeaderChecksumOk bool
 	LogoOk           bool
 	Filename         string
+
+	SupportColor      bool
+	SupportMonochrome bool
+	SupportSGB        bool
+	PGBMode           bool
 }
 
 type Rom struct {
@@ -616,6 +621,10 @@ func getMemoryBankControllerByCartridgeType(cartridgeType uint8) int {
 		memoryBankControllerNumber = 5
 	case 0x1B, 0x1E:
 		memoryBankControllerNumber = 5
+	case 0x20:
+		memoryBankControllerNumber = 6
+	case 0x22:
+		memoryBankControllerNumber = 7
 	}
 
 	return memoryBankControllerNumber
@@ -745,6 +754,30 @@ func parseRomHeader(romData []byte) (*RomFeatures, error) {
 	}
 
 	romFeatures.LogoOk = isLogoOk(romData)
+
+	romFeatures.SupportMonochrome = true
+	if GetBit(romFeatures.ColorGB, 7) {
+		// Values with bit 7 and either bit 2 or 3 set will switch the Game Boy into a special non-CGB-mode called “PGB mode”.
+		if GetBit(romFeatures.ColorGB, 2) || GetBit(romFeatures.ColorGB, 3) {
+			romFeatures.PGBMode = true
+			romFeatures.SupportColor = false
+			romFeatures.SupportMonochrome = true
+		} else if romFeatures.ColorGB == 0x80 {
+			// The game supports CGB enhancements, but is backwards compatible with monochrome Game Boys
+			romFeatures.SupportColor = true
+			romFeatures.SupportMonochrome = true
+		} else if romFeatures.ColorGB == 0xC0 {
+			// The game works on CGB only (the hardware ignores bit 6, so this really functions the same as $80)
+			romFeatures.SupportColor = true
+			romFeatures.SupportMonochrome = false
+		}
+	}
+
+	if romFeatures.GBSGBIndicator == 0x03 {
+		romFeatures.SupportSGB = true
+	} else {
+		romFeatures.SupportSGB = false
+	}
 
 	return &romFeatures, nil
 }

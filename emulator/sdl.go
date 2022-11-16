@@ -14,7 +14,64 @@ import (
 	"unsafe"
 )
 
-func (e *Emulator) initializeSDL(windowName, fontFilename string, windowScale float64) error {
+type Window struct {
+	window   *sdl.Window
+	surface  *sdl.Surface
+	renderer *sdl.Renderer
+	texture  *sdl.Texture
+	font     *ttf.Font
+
+	keyboardState []uint8
+	frameBuffer   [WIDTH * HEIGHT]int32
+
+	// Vertical Sync (VSYNC) active
+	vsyncEnabled bool
+
+	// Window visible or only as a buffer
+	showWindow bool
+
+	// Frames per second
+	frames                    uint64
+	framesPerSecond           uint32
+	framesCurrentSecond       uint32
+	deltaTime                 uint64
+	millisecondsPreviousFrame uint64
+	showFPS                   bool
+
+	// Console messages
+	consoleMessage         string
+	showMessage            bool
+	consoleMessageDuration time.Duration
+	consoleMessageStart    time.Time
+}
+
+func newWindow(title string, fontFilename string, windowScale float64, showWindow bool) (*Window, error) {
+	window := &Window{
+		vsyncEnabled: true,
+		showFPS:      false,
+		showMessage:  false,
+		showWindow:   showWindow,
+	}
+
+	err := window.initializeSDL(title, fontFilename, windowScale)
+	if err != nil {
+		return nil, err
+	}
+
+	blackColor := int32(0)
+	window.SetFramebufferColor(blackColor)
+
+	return window, nil
+}
+
+func (w *Window) Destroy() {
+	w.texture.Destroy()
+	w.renderer.Destroy()
+	w.window.Destroy()
+	sdl.Quit()
+}
+
+func (w *Window) initializeSDL(windowName, fontFilename string, windowScale float64) error {
 	var err error
 
 	// SDL Initialization
@@ -33,8 +90,8 @@ func (e *Emulator) initializeSDL(windowName, fontFilename string, windowScale fl
 		return err
 	}
 
-	if e.showWindow {
-		e.window, err = sdl.CreateWindow(
+	if w.showWindow {
+		w.window, err = sdl.CreateWindow(
 			windowName,
 			sdl.WINDOWPOS_CENTERED,
 			sdl.WINDOWPOS_CENTERED,
@@ -45,12 +102,12 @@ func (e *Emulator) initializeSDL(windowName, fontFilename string, windowScale fl
 			return err
 		}
 
-		e.renderer, err = sdl.CreateRenderer(e.window, -1, sdl.RENDERER_PRESENTVSYNC|sdl.RENDERER_ACCELERATED)
+		w.renderer, err = sdl.CreateRenderer(w.window, -1, sdl.RENDERER_PRESENTVSYNC|sdl.RENDERER_ACCELERATED)
 		if err != nil {
 			return err
 		}
 	} else {
-		e.surface, err = sdl.CreateRGBSurface(
+		w.surface, err = sdl.CreateRGBSurface(
 			0,
 			int32(WIDTH*windowScale),
 			int32(HEIGHT*windowScale),
@@ -62,14 +119,14 @@ func (e *Emulator) initializeSDL(windowName, fontFilename string, windowScale fl
 		if err != nil {
 			return err
 		}
-		e.renderer, err = sdl.CreateSoftwareRenderer(e.surface)
+		w.renderer, err = sdl.CreateSoftwareRenderer(w.surface)
 		if err != nil {
 			return err
 		}
 	}
 
 	// Creating a SDL texture that is used to display the color buffer
-	e.texture, err = e.renderer.CreateTexture(
+	w.texture, err = w.renderer.CreateTexture(
 		uint32(sdl.PIXELFORMAT_RGBA32),
 		sdl.TEXTUREACCESS_STREAMING,
 		WIDTH,
@@ -80,59 +137,59 @@ func (e *Emulator) initializeSDL(windowName, fontFilename string, windowScale fl
 	}
 
 	// Point to Keyboard State
-	e.keyboardState = sdl.GetKeyboardState()
+	w.keyboardState = sdl.GetKeyboardState()
 
 	// Font
-	e.font, err = ttf.OpenFont(fontFilename, 25)
+	w.font, err = ttf.OpenFont(fontFilename, 25)
 	if err != nil {
 		return err
 	}
 
 	// Vsync
-	e.renderer.RenderSetVSync(e.vsyncEnabled)
+	w.renderer.RenderSetVSync(w.vsyncEnabled)
 
 	return nil
 }
 
-func (e *Emulator) calculateFPS() {
-	e.frames++
-	e.framesCurrentSecond++
+func (w *Window) calculateFPS() {
+	w.frames++
+	w.framesCurrentSecond++
 
 	ticks := sdl.GetTicks64()
-	e.deltaTime += ticks - e.millisecondsPreviousFrame
-	e.millisecondsPreviousFrame = ticks
-	if e.deltaTime >= 1000 {
-		e.framesPerSecond = e.framesCurrentSecond
-		e.framesCurrentSecond = 0
-		e.deltaTime = 0
+	w.deltaTime += ticks - w.millisecondsPreviousFrame
+	w.millisecondsPreviousFrame = ticks
+	if w.deltaTime >= 1000 {
+		w.framesPerSecond = w.framesCurrentSecond
+		w.framesCurrentSecond = 0
+		w.deltaTime = 0
 	}
 }
 
-func (e *Emulator) renderFrame() {
-	e.calculateFPS()
+func (w *Window) renderFrame() {
+	w.calculateFPS()
 
-	e.renderer.Clear()
+	w.renderer.Clear()
 
 	// Render FrameBuffer
-	buf := unsafe.Pointer(&e.frameBuffer[0])
+	buf := unsafe.Pointer(&w.frameBuffer[0])
 	framebufferBytes := unsafe.Slice((*byte)(buf), WIDTH*HEIGHT)
-	e.texture.Update(nil, framebufferBytes, WIDTH*4)
-	e.renderer.Copy(e.texture, nil, nil)
+	w.texture.Update(nil, framebufferBytes, WIDTH*4)
+	w.renderer.Copy(w.texture, nil, nil)
 
-	if e.showFPS {
-		e.drawFPS()
+	if w.showFPS {
+		w.drawFPS()
 	}
 
-	if e.showMessage {
-		e.drawMessage()
+	if w.showMessage {
+		w.drawMessage()
 
 		now := time.Now()
-		if e.consoleMessageDuration != 0 && now.Sub(e.consoleMessageStart) > e.consoleMessageDuration {
-			e.showMessage = false
+		if w.consoleMessageDuration != 0 && now.Sub(w.consoleMessageStart) > w.consoleMessageDuration {
+			w.showMessage = false
 		}
 	}
 
-	e.renderer.Present()
+	w.renderer.Present()
 }
 
 func pngToJpeg(inputPNG []byte) ([]byte, error) {
@@ -180,18 +237,18 @@ func SaveJPGFromSurface(surface *sdl.Surface, filename string) error {
 	return nil
 }
 
-func (e *Emulator) TakeSnapshot(filename string) error {
-	w, h, err := e.renderer.GetOutputSize()
+func (w *Window) TakeSnapshot(filename string) error {
+	width, height, err := w.renderer.GetOutputSize()
 	if err != nil {
 		return err
 	}
 
-	surface, err := sdl.CreateRGBSurface(0, w, h, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000)
+	surface, err := sdl.CreateRGBSurface(0, width, height, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000)
 	if err != nil {
 		return err
 	}
 
-	err = e.renderer.ReadPixels(nil, sdl.PIXELFORMAT_ARGB8888, surface.Data(), int(surface.Pitch))
+	err = w.renderer.ReadPixels(nil, sdl.PIXELFORMAT_ARGB8888, surface.Data(), int(surface.Pitch))
 	if err != nil {
 		return err
 	}
@@ -221,42 +278,42 @@ func (e *Emulator) TakeSnapshot(filename string) error {
 	return nil
 }
 
-func (e *Emulator) drawFPS() error {
+func (w *Window) drawFPS() error {
 	color := sdl.Color{R: 0, G: 255, B: 0, A: 255}
-	framesString := fmt.Sprintf("FPS %d", e.framesPerSecond)
-	return e.drawText(WIDTH*4-100, 0, framesString, color)
+	framesString := fmt.Sprintf("FPS %d", w.framesPerSecond)
+	return w.drawText(WIDTH*4-100, 0, framesString, color)
 }
 
-func (e *Emulator) drawMessage() error {
+func (w *Window) drawMessage() error {
 	color := sdl.Color{R: 0, G: 0, B: 255, A: 255}
-	return e.drawText(10, HEIGHT*4-35, e.consoleMessage, color)
+	return w.drawText(10, HEIGHT*4-35, w.consoleMessage, color)
 }
 
-func (e *Emulator) SetMessage(message string, duration time.Duration) {
-	e.showMessage = true
-	e.consoleMessage = message
-	e.consoleMessageDuration = duration
-	e.consoleMessageStart = time.Now()
+func (w *Window) SetMessage(message string, duration time.Duration) {
+	w.showMessage = true
+	w.consoleMessage = message
+	w.consoleMessageDuration = duration
+	w.consoleMessageStart = time.Now()
 }
 
-func (e *Emulator) drawText(x, y int32, text string, color sdl.Color) error {
+func (w *Window) drawText(x, y int32, text string, color sdl.Color) error {
 
 	// as TTF_RenderText_Solid could only be used on
 	// SDL_Surface then you have to create the surface first
-	surface, err := e.font.RenderUTF8Solid(text, color)
+	surface, err := w.font.RenderUTF8Solid(text, color)
 	if err != nil {
 		return err
 	}
 	defer surface.Free()
 
 	// now you can convert it into a texture
-	texture, err := e.renderer.CreateTextureFromSurface(surface)
+	texture, err := w.renderer.CreateTextureFromSurface(surface)
 	if err != nil {
 		return err
 	}
 	defer texture.Destroy()
 
-	textWidth, textHeight, err := e.font.SizeUTF8(text)
+	textWidth, textHeight, err := w.font.SizeUTF8(text)
 
 	messageRectangle := sdl.Rect{
 		X: x,                 // Controls the rect's x coordinate
@@ -276,7 +333,38 @@ func (e *Emulator) drawText(x, y int32, text string, color sdl.Color) error {
 	// the crop size (you can ignore this if you don't want
 	// to dabble with cropping), and the rect which is the size
 	// and coordinate of your texture
-	e.renderer.Copy(texture, nil, &messageRectangle)
+	w.renderer.Copy(texture, nil, &messageRectangle)
 
 	return nil
+}
+
+func (w *Window) SetFramebufferColor(color int32) {
+	for i, _ := range w.frameBuffer {
+		w.frameBuffer[i] = color
+	}
+}
+
+func (w *Window) ToggleVsync() {
+	w.renderer.RenderSetVSync(!w.vsyncEnabled)
+}
+
+func (w *Window) SetVsync(active bool) {
+	w.vsyncEnabled = active
+	w.renderer.RenderSetVSync(w.vsyncEnabled)
+}
+
+func (w *Window) GetVsync() bool {
+	return w.vsyncEnabled
+}
+
+func (w *Window) ToggleShowFPS() {
+	w.showFPS = !w.showFPS
+}
+
+func (w *Window) GetFramebuffer() *[WIDTH * HEIGHT]int32 {
+	return &w.frameBuffer
+}
+
+func (w *Window) GetKeyboardState() []uint8 {
+	return w.keyboardState
 }

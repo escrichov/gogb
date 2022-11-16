@@ -77,53 +77,80 @@ func convertToHumanBits(numBytes int) string {
 func (e *Emulator) PrintCartridge() {
 	mbcFeatures := e.rom.controller.GetFeatures()
 
+	var ramString string
+	if mbcFeatures.RamSize > 0 {
+		ramString = fmt.Sprintf("Ram Size: %d bytes (%s, %s) (%d Banks, 8KiB each)",
+			mbcFeatures.RamSize,
+			convertToHumanBytes(mbcFeatures.RamSize),
+			convertToHumanBits(mbcFeatures.RamSize),
+			mbcFeatures.RamBanks,
+		)
+
+		if mbcFeatures.RamFilename != "" {
+			ramString += fmt.Sprintf(" - Ram Filename: %s", mbcFeatures.RamFilename)
+		}
+	} else {
+		ramString = "No Ram"
+	}
+
+	var cgbString string
+	if e.rom.features.SupportColor && e.rom.features.SupportMonochrome {
+		cgbString = "Works in Monochrome and Gameboy Color"
+	} else if e.rom.features.PGBMode {
+		cgbString = "Works in special a non-CGB-mode called PGBMode"
+	} else if e.rom.features.SupportMonochrome {
+		cgbString = "Works in Monochrome only"
+	} else if e.rom.features.SupportColor {
+		cgbString = "Works in Gameboy Color only"
+	}
+
+	var sgbString string
+	if e.rom.features.SupportSGB {
+		sgbString = "Works on Super Gameboy"
+	} else {
+		sgbString = "Doesn't work on Super Gameboy"
+	}
+
 	cartridge := fmt.Sprintf(
 		"Cartridge\n\t"+
 			"Title: %s\n\t"+
-			"Cartridge Type: %s (%d)\n\t"+
-			"MBC: %d\n\t"+
-			"Rom Size: %d bytes (%s, %s)\n\t"+
-			"Rom Banks: %d (16KiB each)\n\t"+
-			"Ram Size: %d bytes (%s, %s)\n\t"+
-			"Ram Banks: %d (8KiB each)\n\t"+
+			"Cartridge Type: %d %s\n\t"+
+			"Rom Size: %d bytes (%s, %s) (%d Banks, 16KiB each)\n\t"+
+			"%s\n\t"+
 			"Battery: %t\n\t"+
-			"Ram Filename: %s\n\t"+
-			"Header Checksum: %x (Ok: %t)\n\t"+
-			"Global Checksum: %x (Ok: %t)\n\t"+
-			"Logo ok: %t\n\t"+
 			"License Code: %x, %s\n\t"+
 			"Destination code: %x, %s\n\t"+
 			"Mask ROM version number: %x\n\t"+
 			"Manufacturer code: %s\n\t"+
-			"SGB flag: %x\n\t"+
-			"CGB flag: %x\n",
+			"%s (CGB Flag: %x)\n\t"+
+			"%s (SGB flag: %x)\n\t"+
+			"Header Checksum: %x (Ok: %t)\n\t"+
+			"Global Checksum: %x (Ok: %t)\n\t"+
+			"Logo ok: %t\n",
 		e.rom.features.Title,
-		e.rom.features.CartridgeTypeName,
 		e.rom.features.CartridgeType,
-		mbcFeatures.MemoryBankControllerNumber,
+		e.rom.features.CartridgeTypeName,
 		mbcFeatures.RomSize,
 		convertToHumanBytes(mbcFeatures.RomSize),
 		convertToHumanBits(mbcFeatures.RomSize),
 		mbcFeatures.RomBanks,
-		mbcFeatures.RamSize,
-		convertToHumanBytes(mbcFeatures.RamSize),
-		convertToHumanBits(mbcFeatures.RamSize),
-		mbcFeatures.RamBanks,
+		ramString,
 		mbcFeatures.HasBattery,
-		mbcFeatures.RamFilename,
-		e.rom.features.GlobalChecksum,
-		e.rom.features.GlobalChecksumOk,
-		e.rom.features.HeaderChecksum,
-		e.rom.features.HeaderChecksumOk,
-		e.rom.features.LogoOk,
 		e.rom.features.LicenseCode,
 		e.rom.features.LicenseCodeName,
 		e.rom.features.DestinationCode,
 		e.rom.features.DestinationCodeName,
 		e.rom.features.MaskROMVersionNumber,
 		e.rom.features.ManufacturerCode,
+		cgbString,
 		e.rom.features.ColorGB,
+		sgbString,
 		e.rom.features.GBSGBIndicator,
+		e.rom.features.GlobalChecksum,
+		e.rom.features.GlobalChecksumOk,
+		e.rom.features.HeaderChecksum,
+		e.rom.features.HeaderChecksumOk,
+		e.rom.features.LogoOk,
 	)
 	fmt.Println(cartridge)
 }

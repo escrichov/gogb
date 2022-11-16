@@ -150,6 +150,7 @@ func (e *Emulator) setLCDStatus() {
 
 func (e *Emulator) PPURun() bool {
 	renderFrame := false
+	framebuffer := e.window.GetFramebuffer()
 	e.setLCDStatus()
 
 	// PPU
@@ -248,7 +249,7 @@ func (e *Emulator) PPURun() bool {
 
 						paletteIndexValue := uint16((e.io[327+paletteIndex]>>(2*color))%4) + paletteIndex*4&7
 						frameBufferIndex := uint16(ly)*WIDTH + uint16(tmp)
-						e.frameBuffer[frameBufferIndex] = e.palette[paletteIndexValue]
+						framebuffer[frameBufferIndex] = e.palette[paletteIndexValue]
 					}
 				}
 

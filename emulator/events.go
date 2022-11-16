@@ -20,36 +20,35 @@ func (e *Emulator) manageKeyboardEvents() {
 				case sdl.K_ESCAPE:
 					e.stop = true
 				case sdl.K_v:
-					e.vsyncEnabled = !e.vsyncEnabled
-					e.renderer.RenderSetVSync(e.vsyncEnabled)
+					e.window.ToggleVsync()
 					var msg string
-					if e.vsyncEnabled {
+					if e.window.GetVsync() {
 						msg = fmt.Sprintf("Vsync enabled")
 					} else {
 						msg = fmt.Sprintf("Vsync disabled")
 					}
-					e.SetMessage(msg, time.Second*3)
+					e.window.SetMessage(msg, time.Second*3)
 				case sdl.K_f:
-					e.showFPS = !e.showFPS
+					e.window.ToggleShowFPS()
 				case sdl.K_k:
 					snapshotFile := "snapshot.png"
-					e.TakeSnapshot(snapshotFile)
+					e.window.TakeSnapshot(snapshotFile)
 					msg := fmt.Sprintf("Snapshot saved: %s", snapshotFile)
-					e.SetMessage(msg, time.Second*3)
+					e.window.SetMessage(msg, time.Second*3)
 				case sdl.K_s:
 					stateFile := "save.bess"
 					e.BessStore(stateFile)
 					msg := fmt.Sprintf("State saved: %s", stateFile)
-					e.SetMessage(msg, time.Second*3)
+					e.window.SetMessage(msg, time.Second*3)
 				case sdl.K_r:
 					e.reset = true
-					e.SetMessage("Reset", time.Second*3)
+					e.window.SetMessage("Reset", time.Second*3)
 				case sdl.K_p:
 					e.pause = !e.pause
 					if e.pause {
-						e.SetMessage("Paused", 0)
+						e.window.SetMessage("Paused", 0)
 					} else {
-						e.SetMessage("Continue", time.Second*3)
+						e.window.SetMessage("Continue", time.Second*3)
 					}
 
 				}

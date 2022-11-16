@@ -1,8 +1,6 @@
 package emulator
 
-import (
-	"github.com/veandco/go-sdl2/sdl"
-)
+import "github.com/veandco/go-sdl2/sdl"
 
 func (e *Emulator) mem8(addr uint16, val uint8, write bool) uint8 {
 	e.tick()
@@ -129,16 +127,18 @@ func (e *Emulator) mem8(addr uint16, val uint8, write bool) uint8 {
 			switch addr {
 			case 0xff00:
 				if (^e.io[256] & 16) != 0 {
-					return ^(16 + e.keyboardState[sdl.SCANCODE_DOWN]*8 +
-						e.keyboardState[sdl.SCANCODE_UP]*4 +
-						e.keyboardState[sdl.SCANCODE_LEFT]*2 +
-						e.keyboardState[sdl.SCANCODE_RIGHT])
+					keyboardState := e.window.GetKeyboardState()
+					return ^(16 + keyboardState[sdl.SCANCODE_DOWN]*8 +
+						keyboardState[sdl.SCANCODE_UP]*4 +
+						keyboardState[sdl.SCANCODE_LEFT]*2 +
+						keyboardState[sdl.SCANCODE_RIGHT])
 				}
 				if (^e.io[256] & 32) != 0 {
-					return ^(32 + e.keyboardState[sdl.SCANCODE_RETURN]*8 +
-						e.keyboardState[sdl.SCANCODE_TAB]*4 +
-						e.keyboardState[sdl.SCANCODE_Z]*2 +
-						e.keyboardState[sdl.SCANCODE_X])
+					keyboardState := e.window.GetKeyboardState()
+					return ^(32 + keyboardState[sdl.SCANCODE_RETURN]*8 +
+						keyboardState[sdl.SCANCODE_TAB]*4 +
+						keyboardState[sdl.SCANCODE_Z]*2 +
+						keyboardState[sdl.SCANCODE_X])
 				}
 				return 0xFF
 			}

@@ -69,6 +69,14 @@ func getMemoryBankControllerFeatures(romData []byte, romFilename string) (*MBCFe
 	// ROM Size
 	mbcFeatures.RomBankSize = 16384
 	mbcFeatures.RomSize = 32768 * (1 << romSizeByte)
+	// Check real Rom Size is equal to Rom header size
+	if mbcFeatures.RomSize != len(romData) {
+		return nil, fmt.Errorf(
+			"real rom size (%d bytes) != rom header size (%d bytes)",
+			len(romData),
+			mbcFeatures.RomSize,
+		)
+	}
 	mbcFeatures.RomBanks = uint16(mbcFeatures.RomSize / mbcFeatures.RomBankSize)
 
 	// RAM Size
@@ -92,15 +100,6 @@ func getMemoryBankControllerFeatures(romData []byte, romFilename string) (*MBCFe
 	// Check Ram Size is allowed in the Cartridge Header
 	if !isRamAllowed(cartridgeType) && mbcFeatures.RamSize > 0 {
 		return nil, fmt.Errorf("ram is not allowed for this cartridge type")
-	}
-
-	// Check real Rom Size is equal to Rom header size
-	if mbcFeatures.RomSize != len(romData) {
-		return nil, fmt.Errorf(
-			"real rom size (%d) != rom header size (%d)",
-			mbcFeatures.RomSize,
-			len(romData),
-		)
 	}
 
 	// Battery
@@ -136,6 +135,8 @@ func newMemoryBankController(romData []byte, romFilename string) (MemoryBankCont
 	case 3:
 		mbc = NewMBC3(baseMBC)
 	case 5:
+		mbc = NewMBC5(baseMBC)
+	case 6:
 		mbc = NewMBC5(baseMBC)
 	default:
 		return nil, fmt.Errorf("unsupported memory bank controller: %d", baseMBC.MemoryBankControllerNumber)
