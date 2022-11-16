@@ -75,7 +75,8 @@ func convertToHumanBits(numBytes int) string {
 }
 
 func (e *Emulator) PrintCartridge() {
-	mbcFeatures := e.rom.controller.GetFeatures()
+	mbcFeatures := e.mem.rom.controller.GetFeatures()
+	romFeatures := e.mem.rom.features
 
 	var ramString string
 	if mbcFeatures.RamSize > 0 {
@@ -94,18 +95,18 @@ func (e *Emulator) PrintCartridge() {
 	}
 
 	var cgbString string
-	if e.rom.features.SupportColor && e.rom.features.SupportMonochrome {
+	if romFeatures.SupportColor && e.mem.rom.features.SupportMonochrome {
 		cgbString = "Works in Monochrome and Gameboy Color"
-	} else if e.rom.features.PGBMode {
+	} else if romFeatures.PGBMode {
 		cgbString = "Works in special a non-CGB-mode called PGBMode"
-	} else if e.rom.features.SupportMonochrome {
+	} else if romFeatures.SupportMonochrome {
 		cgbString = "Works in Monochrome only"
-	} else if e.rom.features.SupportColor {
+	} else if romFeatures.SupportColor {
 		cgbString = "Works in Gameboy Color only"
 	}
 
 	var sgbString string
-	if e.rom.features.SupportSGB {
+	if romFeatures.SupportSGB {
 		sgbString = "Works on Super Gameboy"
 	} else {
 		sgbString = "Doesn't work on Super Gameboy"
@@ -127,30 +128,30 @@ func (e *Emulator) PrintCartridge() {
 			"Header Checksum: %x (Ok: %t)\n\t"+
 			"Global Checksum: %x (Ok: %t)\n\t"+
 			"Logo ok: %t\n",
-		e.rom.features.Title,
-		e.rom.features.CartridgeType,
-		e.rom.features.CartridgeTypeName,
+		romFeatures.Title,
+		romFeatures.CartridgeType,
+		romFeatures.CartridgeTypeName,
 		mbcFeatures.RomSize,
 		convertToHumanBytes(mbcFeatures.RomSize),
 		convertToHumanBits(mbcFeatures.RomSize),
 		mbcFeatures.RomBanks,
 		ramString,
 		mbcFeatures.HasBattery,
-		e.rom.features.LicenseCode,
-		e.rom.features.LicenseCodeName,
-		e.rom.features.DestinationCode,
-		e.rom.features.DestinationCodeName,
-		e.rom.features.MaskROMVersionNumber,
-		e.rom.features.ManufacturerCode,
+		romFeatures.LicenseCode,
+		romFeatures.LicenseCodeName,
+		romFeatures.DestinationCode,
+		romFeatures.DestinationCodeName,
+		romFeatures.MaskROMVersionNumber,
+		romFeatures.ManufacturerCode,
 		cgbString,
-		e.rom.features.ColorGB,
+		romFeatures.ColorGB,
 		sgbString,
-		e.rom.features.GBSGBIndicator,
-		e.rom.features.GlobalChecksum,
-		e.rom.features.GlobalChecksumOk,
-		e.rom.features.HeaderChecksum,
-		e.rom.features.HeaderChecksumOk,
-		e.rom.features.LogoOk,
+		romFeatures.GBSGBIndicator,
+		romFeatures.GlobalChecksum,
+		romFeatures.GlobalChecksumOk,
+		romFeatures.HeaderChecksum,
+		romFeatures.HeaderChecksumOk,
+		romFeatures.LogoOk,
 	)
 	fmt.Println(cartridge)
 }

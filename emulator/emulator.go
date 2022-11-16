@@ -25,7 +25,6 @@ type Emulator struct {
 	mem    Memory
 	ppu    PPU
 	timer  Timer
-	rom    *Rom
 	window *Window
 
 	// Serial
@@ -58,13 +57,13 @@ func NewEmulator(romFilename, bootRomFilename, fontFilename string, showWindow b
 		}
 	}
 
-	emulator.rom, err = newRomFromFile(romFilename)
+	emulator.mem.rom, err = newRomFromFile(romFilename)
 	if err != nil {
 		return nil, err
 	}
 
 	emulator.window, err = newWindow(
-		ToCamel(emulator.rom.features.Title),
+		ToCamel(emulator.mem.rom.features.Title),
 		fontFilename,
 		4.0,
 		showWindow,
@@ -168,7 +167,7 @@ func (e *Emulator) Reset() error {
 	// Framebuffer set to black
 	e.window.SetFramebufferColor(0)
 
-	e.rom, err = newRomFromFile(e.romFilename)
+	e.mem.rom, err = newRomFromFile(e.romFilename)
 	if err != nil {
 		return err
 	}

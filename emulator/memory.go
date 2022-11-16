@@ -12,6 +12,7 @@ type Memory struct {
 	lcdcControl LCDControl
 	lcdStatus   LCDStatus
 
+	rom      *Rom
 	emulator *Emulator
 }
 
@@ -29,16 +30,16 @@ func (m *Memory) mem8(addr uint16, val uint8, write bool) uint8 {
 			return m.bootRom[addr]
 		}
 		if write {
-			m.emulator.rom.controller.Write(addr, val)
+			m.rom.controller.Write(addr, val)
 			return 0x00
 		}
-		return m.emulator.rom.controller.Read(addr)
+		return m.rom.controller.Read(addr)
 	case 1, 2, 3, 5: // 0x2000 - 0xBFFF
 		if write {
-			m.emulator.rom.controller.Write(addr, val)
+			m.rom.controller.Write(addr, val)
 			return 0x00
 		}
-		return m.emulator.rom.controller.Read(addr)
+		return m.rom.controller.Read(addr)
 	case 4: // 0x8000 - 0x9FFF
 		addr &= 0x1fff
 		if write {
