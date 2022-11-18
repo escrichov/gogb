@@ -45,8 +45,13 @@ func NewEmulator(romFilename, bootRomFilename, fontFilename string, showWindow b
 	emulator := Emulator{
 		romFilename:     romFilename,
 		bootRomFilename: bootRomFilename,
-		ppu:             PPU{ppuDot: 32, palette: []int32{-1, -23197, -65536, -1 << 24, -1, -8092417, -12961132, -1 << 24}},
-		timer:           Timer{internalTimer: 8},
+		ppu: PPU{
+			ppuDot:     32,
+			paletteBGP: []int32{-1, -23197, -65536, -1 << 24},
+			paletteOB0: []int32{-1, -8092417, -12961132, -1 << 24},
+			paletteOB1: []int32{-1, -23197, -65536, -1 << 24, -1, -8092417, -12961132, -1 << 24},
+		},
+		timer: Timer{internalTimer: 8},
 	}
 	emulator.mem.emulator = &emulator
 	emulator.timer.emulator = &emulator
