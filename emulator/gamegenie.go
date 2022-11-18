@@ -75,7 +75,7 @@ func GameGenieParseCode(codeString string) (*GameGenieCode, error) {
 
 	// The address should be located in ROM area 0000h-7FFFh
 	if code.address > 0x7FFF {
-		return nil, fmt.Errorf("invalid address: %s. It should be location in 0x0000-0x7FFF area", code.address)
+		return nil, fmt.Errorf("invalid address: %x. It should be location in 0x0000-0x7FFF area", code.address)
 	}
 
 	return &code, nil
