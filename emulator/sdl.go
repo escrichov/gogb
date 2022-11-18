@@ -22,7 +22,7 @@ type Window struct {
 	font     *ttf.Font
 
 	keyboardState []uint8
-	frameBuffer   [WIDTH * HEIGHT]int32
+	frameBuffer   [WIDTH * HEIGHT]uint32
 
 	// Vertical Sync (VSYNC) active
 	vsyncEnabled bool
@@ -58,7 +58,7 @@ func newWindow(title string, fontFilename string, windowScale float64, showWindo
 		return nil, err
 	}
 
-	blackColor := int32(0)
+	blackColor := uint32(0)
 	window.SetFramebufferColor(blackColor)
 
 	return window, nil
@@ -338,7 +338,7 @@ func (w *Window) drawText(x, y int32, text string, color sdl.Color) error {
 	return nil
 }
 
-func (w *Window) SetFramebufferColor(color int32) {
+func (w *Window) SetFramebufferColor(color uint32) {
 	for i, _ := range w.frameBuffer {
 		w.frameBuffer[i] = color
 	}
@@ -361,7 +361,7 @@ func (w *Window) ToggleShowFPS() {
 	w.showFPS = !w.showFPS
 }
 
-func (w *Window) GetFramebuffer() *[WIDTH * HEIGHT]int32 {
+func (w *Window) GetFramebuffer() *[WIDTH * HEIGHT]uint32 {
 	return &w.frameBuffer
 }
 

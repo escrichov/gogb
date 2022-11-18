@@ -16,9 +16,9 @@ const (
 )
 
 type PPU struct {
-	paletteBGP []int32
-	paletteOB0 []int32
-	paletteOB1 []int32
+	paletteBGP []uint32
+	paletteOB0 []uint32
+	paletteOB1 []uint32
 	ppuDot     int
 
 	// OAM Scan
@@ -216,9 +216,9 @@ func (e *Emulator) spriteHasPriorityOverBG(spriteAddress uint8, spriteColor uint
 
 	if GetBit(oamFlags, 7) {
 		if backgroundColor == 0 {
-			return false
-		} else {
 			return true
+		} else {
+			return false
 		}
 	} else {
 		return true
@@ -282,7 +282,7 @@ func (e *Emulator) getColorFromPalette(paletteIndex uint8, colorIndex uint8) uin
 	return color
 }
 
-func (e *Emulator) getDisplayColor(paletteIndex uint8, gbColor uint8) int32 {
+func (e *Emulator) getDisplayColor(paletteIndex uint8, gbColor uint8) uint32 {
 	switch paletteIndex {
 	case paletteBGP:
 		return e.ppu.paletteBGP[gbColor]

@@ -47,9 +47,9 @@ func NewEmulator(romFilename, bootRomFilename, fontFilename string, showWindow b
 		bootRomFilename: bootRomFilename,
 		ppu: PPU{
 			ppuDot:     32,
-			paletteBGP: []int32{-1, -23197, -65536, -1 << 24},
-			paletteOB0: []int32{-1, -8092417, -12961132, -1 << 24},
-			paletteOB1: []int32{-1, -23197, -65536, -1 << 24, -1, -8092417, -12961132, -1 << 24},
+			paletteBGP: []uint32{0xFFFFFFFF, 0xFFFFA563, 0xFFFF0000, 0xFF000000},
+			paletteOB0: []uint32{0xFFFFFFFF, 0xFF8484FF, 0xFF3A3A94, 0xFF000000},
+			paletteOB1: []uint32{0xFFFFFFFF, 0xFF8484FF, 0xFF3A3A94, 0xFF000000},
 		},
 		timer: Timer{internalTimer: 8},
 	}
