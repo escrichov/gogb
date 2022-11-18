@@ -9,15 +9,20 @@ package emulator
 // - 0x6000-0x7FFF - MODE - MBC1 mode register
 type MBC1 struct {
 	*BaseMBC
-	bank1         uint8
-	bank2         uint8
 	memoryModel   int
 	enableRamBank bool
 	isMBC1M       bool
+
+	bank1 uint8
+	bank2 uint8
+
+	romBank00003FFF uint8
+	romBank40007FFF uint8
+	ramBank         uint8
 }
 
 func NewMBC1(baseMBC *BaseMBC) *MBC1 {
-	return &MBC1{bank1: 1, BaseMBC: baseMBC}
+	return &MBC1{romBank40007FFF: 1, bank1: 1, BaseMBC: baseMBC}
 }
 
 func (mbc *MBC1) memoryBankController1RomByBankNumber(bankNumber uint8, addr uint16) uint8 {
@@ -25,28 +30,8 @@ func (mbc *MBC1) memoryBankController1RomByBankNumber(bankNumber uint8, addr uin
 	return mbc.rom[bankAddr]
 }
 
-func (mbc *MBC1) memoryBankController1RomAddress00003FFF(addr uint16) uint8 {
-	bankNumber := uint8(0)
-	if mbc.memoryModel == 1 {
-		bankNumber = mbc.bank2 << 5
-		bankNumber &= uint8(mbc.RomBanks) - 1
-	}
-	return mbc.memoryBankController1RomByBankNumber(bankNumber, addr)
-}
-
-func (mbc *MBC1) memoryBankController1Rom40007FFF(addr uint16) uint8 {
-	bankNumber := (mbc.bank2 << 5) | mbc.bank1
-	bankNumber &= uint8(mbc.RomBanks) - 1
-	return mbc.memoryBankController1RomByBankNumber(bankNumber, addr)
-}
-
 func (mbc *MBC1) memoryBankController1GetRamAddressA000BFFF(addr uint16) uint16 {
-	bankNumber := uint8(0)
-	if mbc.memoryModel == 1 {
-		bankNumber = mbc.bank2
-		bankNumber &= uint8(mbc.RamBanks) - 1
-	}
-	bankAddress := uint16(bankNumber)<<13 + uint16(addr&0x1fff)
+	bankAddress := uint16(mbc.ramBank)<<13 + addr&0x1fff
 	return bankAddress
 }
 
@@ -55,9 +40,9 @@ func (mbc *MBC1) Read(addr uint16) uint8 {
 
 	switch addr >> 13 {
 	case 0, 1: // 0x0000–0x3FFF
-		return mbc.memoryBankController1RomAddress00003FFF(addr)
+		return mbc.memoryBankController1RomByBankNumber(mbc.romBank00003FFF, addr)
 	case 2, 3: // 0x4000 - 0x7FFF
-		return mbc.memoryBankController1Rom40007FFF(addr)
+		return mbc.memoryBankController1RomByBankNumber(mbc.romBank40007FFF, addr)
 	case 5: // 0xA000 - 0xBFFF
 		// This area is used to address external RAM in the cartridge (if any).
 		// The RAM is only accessible if RAM is enabled,
@@ -112,14 +97,43 @@ func (mbc *MBC1) Write(addr uint16, val uint8) {
 		// e.g. a 256 KiB cart only needs a 4-bit bank number to address all of its 16 banks,
 		// so this register is masked to 4 bits. The upper bit would be ignored for bank selection.
 		mbc.bank1 &= uint8(mbc.RomBanks) - 1
+
+		// Set rom banks
+		mbc.romBank40007FFF = (mbc.bank2 << 5) | mbc.bank1
+		mbc.romBank40007FFF &= uint8(mbc.RomBanks) - 1
 	case 2: // 0x4000 - 0x5FFF, BANK2 - MBC1 bank register 2
 		// 1 MiB ROM or larger carts only or 32 KiB ram carts only
 		mbc.bank2 = val & 0x03
+
+		// Set rom/ram banks
+		if mbc.memoryModel == 1 {
+			mbc.romBank00003FFF = mbc.bank2 << 5
+			mbc.romBank00003FFF &= uint8(mbc.RomBanks) - 1
+			mbc.ramBank = mbc.bank2
+			mbc.ramBank &= uint8(mbc.RamBanks) - 1
+		} else {
+			mbc.romBank00003FFF = uint8(0)
+			mbc.ramBank = uint8(0)
+		}
+		mbc.romBank40007FFF = (mbc.bank2 << 5) | mbc.bank1
+		mbc.romBank40007FFF &= uint8(mbc.RomBanks) - 1
 	case 3: // 0x6000-7FFF, MODE - MBC1 mode register
 		if GetBit(val, 0) {
 			mbc.memoryModel = 1
 		} else {
 			mbc.memoryModel = 0
+		}
+
+		// Set rom/ram banks
+		if mbc.memoryModel == 1 {
+			mbc.romBank00003FFF = mbc.bank2 << 5
+			mbc.romBank00003FFF &= uint8(mbc.RomBanks) - 1
+			// Ram banks
+			mbc.ramBank = mbc.bank2
+			mbc.ramBank &= uint8(mbc.RamBanks) - 1
+		} else {
+			mbc.romBank00003FFF = uint8(0)
+			mbc.ramBank = uint8(0)
 		}
 	case 5: // 0xA000 - 0xBFFF
 		// This area is used to address external RAM in the cartridge (if any).
