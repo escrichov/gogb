@@ -90,7 +90,8 @@ func (e *Emulator) PPURun() bool {
 
 				// Only render visible lines (up to line 144)
 				if ly < HEIGHT {
-					for currentX := uint8(WIDTH - 1); currentX >= 0; currentX-- {
+					for tmp := WIDTH - 1; tmp >= 0; tmp-- {
+						currentX := uint8(tmp)
 						wy := e.mem.io[330]
 						wx := e.mem.io[331]
 						scy := e.mem.io[322]
