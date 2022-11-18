@@ -90,28 +90,32 @@ func (e *Emulator) PPURun() bool {
 
 				// Only render visible lines (up to line 144)
 				if ly < HEIGHT {
-					for tmp := WIDTH - 1; tmp >= 0; tmp-- {
+					for currentX := uint8(WIDTH - 1); currentX >= 0; currentX-- {
+						wy := e.mem.io[330]
+						wx := e.mem.io[331]
+						scy := e.mem.io[322]
+						scx := e.mem.io[323]
 
 						// IsWindow
 						isWindow := false
-						if lcdc.WindowEnable && ly >= e.mem.io[330] && uint8(tmp) >= (e.mem.io[331]-7) {
+						if lcdc.WindowEnable && ly >= wy && currentX >= (wx-7) {
 							isWindow = true
 						}
 
 						// xOffset
 						var xOffset uint8
 						if isWindow {
-							xOffset = uint8(tmp) - e.mem.io[331] + 7
+							xOffset = currentX - wx + 7
 						} else {
-							xOffset = uint8(tmp) + e.mem.io[323]
+							xOffset = currentX + scx
 						}
 
 						// yOffset
 						var yOffset uint8
 						if isWindow {
-							yOffset = ly - e.mem.io[330]
+							yOffset = ly - wy
 						} else {
-							yOffset = ly + e.mem.io[322]
+							yOffset = ly + scy
 						}
 
 						// PaletteIndex
@@ -123,11 +127,11 @@ func (e *Emulator) PPURun() bool {
 							tileMapArea = lcdc.WindowTileMapArea
 						}
 
-						videoRamIndex := uint16(6)
+						videoRamIndexPrefix := uint16(0x1800)
 						if tileMapArea {
-							videoRamIndex = 7
+							videoRamIndexPrefix = 0x1c00
 						}
-						videoRamIndex = videoRamIndex<<10 | uint16(yOffset)/8*32 + uint16(xOffset)/8
+						videoRamIndex := videoRamIndexPrefix | uint16(yOffset)/8*32 + uint16(xOffset)/8
 						var tile = e.mem.videoRam[videoRamIndex]
 
 						// Color
@@ -142,16 +146,18 @@ func (e *Emulator) PPURun() bool {
 						// Sprites
 						if lcdc.ObjEnable {
 							for spriteIndex := uint8(0); spriteIndex < WIDTH; spriteIndex += 4 {
-								spriteX := uint8(tmp) - e.mem.io[spriteIndex+1] + 8
+								spriteX := currentX - e.mem.io[spriteIndex+1] + 8
 								spriteY := ly - e.mem.io[spriteIndex] + 16
 
 								spriteYOffset := uint8(0)
+								// Check y flip
 								if (e.mem.io[spriteIndex+3] & 64) != 0 {
 									spriteYOffset = 7
 								}
 								spriteYOffset = spriteY ^ spriteYOffset
 
 								spriteXOffset := uint8(7)
+								// Check x flip
 								if (e.mem.io[spriteIndex+3] & 32) != 0 {
 									spriteXOffset = 0
 								}
@@ -172,7 +178,7 @@ func (e *Emulator) PPURun() bool {
 						}
 
 						paletteIndexValue := uint16((e.mem.io[327+paletteIndex]>>(2*color))%4) + paletteIndex*4&7
-						frameBufferIndex := uint16(ly)*WIDTH + uint16(tmp)
+						frameBufferIndex := uint16(ly)*WIDTH + uint16(currentX)
 						framebuffer[frameBufferIndex] = e.ppu.palette[paletteIndexValue]
 					}
 				}
