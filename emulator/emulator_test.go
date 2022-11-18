@@ -30,7 +30,7 @@ func RomTester(t *testing.T, romFilename, originalScreenshotFilename string, run
 
 	e.RunTest(runCycles)
 
-	err = e.TakeSnapshot("../screenshots/test.png")
+	err = e.window.TakeSnapshot("../screenshots/test.png")
 	if err != nil {
 		t.Fatalf(`Failed to take snapshot: %v`, err)
 	}
