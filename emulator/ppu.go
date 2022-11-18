@@ -11,11 +11,18 @@ const (
 	paletteOBP1 = 2
 )
 
+const (
+	numSpritesInOAM = uint8(40)
+)
+
 type PPU struct {
 	paletteBGP []int32
 	paletteOB0 []int32
 	paletteOB1 []int32
 	ppuDot     int
+
+	// OAM Scan
+	spritesSelected [10]uint8
 }
 
 // Set the status of the LCD based on the current state of memory.
@@ -288,10 +295,50 @@ func (e *Emulator) getDisplayColor(paletteIndex uint8, gbColor uint8) int32 {
 	}
 }
 
+func (e *Emulator) oamScan() {
+	ly := e.mem.GetLY()
+	lcdc := e.mem.GetLCDC()
+	numSpritesSelected := 0
+
+	// Sprite height
+	height := 8
+	if lcdc.ObjSize {
+		height = 16
+	}
+
+	for spriteIndex := uint8(0); spriteIndex < numSpritesInOAM; spriteIndex++ {
+		if e.spriteIsInLine(spriteIndex, height, ly) {
+			e.ppu.spritesSelected[numSpritesSelected] = spriteIndex
+			numSpritesSelected++
+
+			if numSpritesSelected == 10 {
+				break
+			}
+		}
+	}
+}
+
+func (e *Emulator) spriteIsInLine(spriteIndex uint8, spriteHeight int, currentY uint8) bool {
+	spriteAddress := spriteIndex * 4
+
+	spriteYPosition := int(e.mem.io[spriteAddress]) - 16
+	spriteLowerBound := spriteYPosition
+	spriteUpperBound := spriteYPosition + spriteHeight
+
+	// Check if selected
+	if int(currentY) >= spriteLowerBound && int(currentY) < spriteUpperBound {
+		return true
+	} else {
+		return false
+	}
+}
+
 func (e *Emulator) proccessScanline() {
 	lcdc := e.mem.GetLCDC()
 	ly := e.mem.GetLY()
 	framebuffer := e.window.GetFramebuffer()
+
+	e.oamScan()
 
 	for tmp := WIDTH - 1; tmp >= 0; tmp-- {
 		currentX := uint8(tmp)
@@ -301,8 +348,8 @@ func (e *Emulator) proccessScanline() {
 
 		// Sprites
 		if lcdc.ObjEnable {
-			// Traverse all sprites
-			for spriteIndex := uint8(0); spriteIndex < WIDTH; spriteIndex++ {
+			// Traverse only selected sprites
+			for _, spriteIndex := range e.ppu.spritesSelected {
 				// If sprite has priority override color
 				hasPriority, spriteColor, spritePalette := e.getSpriteIfHasPriority(spriteIndex, currentX, colorIndex)
 				if hasPriority {
