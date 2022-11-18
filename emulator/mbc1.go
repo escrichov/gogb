@@ -9,25 +9,15 @@ package emulator
 // - 0x6000-0x7FFF - MODE - MBC1 mode register
 type MBC1 struct {
 	*BaseMBC
-	bank1           uint8
-	bank2           uint8
-	memoryModel     int
-	enableRamBank   bool
-	allowedRomBank2 bool
-	allowedRamBank2 bool
-	isMBC1M         bool
+	bank1         uint8
+	bank2         uint8
+	memoryModel   int
+	enableRamBank bool
+	isMBC1M       bool
 }
 
 func NewMBC1(baseMBC *BaseMBC) *MBC1 {
-	mbc := &MBC1{bank1: 1, BaseMBC: baseMBC}
-	if mbc.RomBanks >= 64 {
-		mbc.allowedRomBank2 = true
-	}
-	if mbc.RamBanks >= 4 {
-		mbc.allowedRamBank2 = true
-	}
-
-	return mbc
+	return &MBC1{bank1: 1, BaseMBC: baseMBC}
 }
 
 func (mbc *MBC1) memoryBankController1RomByBankNumber(bankNumber uint8, addr uint16) uint8 {
@@ -38,27 +28,25 @@ func (mbc *MBC1) memoryBankController1RomByBankNumber(bankNumber uint8, addr uin
 func (mbc *MBC1) memoryBankController1RomAddress00003FFF(addr uint16) uint8 {
 	bankNumber := uint8(0)
 	if mbc.memoryModel == 1 {
-		if mbc.allowedRomBank2 {
-			bankNumber = mbc.bank2 << 5
-		}
+		bankNumber = mbc.bank2 << 5
+		bankNumber &= uint8(mbc.RomBanks) - 1
 	}
 	return mbc.memoryBankController1RomByBankNumber(bankNumber, addr)
 }
 
 func (mbc *MBC1) memoryBankController1Rom40007FFF(addr uint16) uint8 {
-	bankNumber := mbc.bank1
-	if mbc.allowedRomBank2 {
-		bankNumber |= mbc.bank2 << 5
-	}
+	bankNumber := (mbc.bank2 << 5) | mbc.bank1
+	bankNumber &= uint8(mbc.RomBanks) - 1
 	return mbc.memoryBankController1RomByBankNumber(bankNumber, addr)
 }
 
 func (mbc *MBC1) memoryBankController1GetRamAddressA000BFFF(addr uint16) uint16 {
-	addr &= 0x1fff
-	bankAddress := addr
-	if mbc.memoryModel == 1 && mbc.allowedRamBank2 {
-		bankAddress |= uint16(mbc.bank2) << 13
+	bankNumber := uint8(0)
+	if mbc.memoryModel == 1 {
+		bankNumber = mbc.bank2
+		bankNumber &= uint8(mbc.RamBanks) - 1
 	}
+	bankAddress := uint16(bankNumber)<<13 + uint16(addr&0x1fff)
 	return bankAddress
 }
 
@@ -126,11 +114,7 @@ func (mbc *MBC1) Write(addr uint16, val uint8) {
 		mbc.bank1 &= uint8(mbc.RomBanks) - 1
 	case 2: // 0x4000 - 0x5FFF, BANK2 - MBC1 bank register 2
 		// 1 MiB ROM or larger carts only or 32 KiB ram carts only
-		if mbc.allowedRomBank2 || mbc.allowedRamBank2 {
-			mbc.bank2 = val & 0x03
-			// Max size number of banks
-			mbc.bank2 &= (uint8(mbc.RomBanks) >> 5) - 1
-		}
+		mbc.bank2 = val & 0x03
 	case 3: // 0x6000-7FFF, MODE - MBC1 mode register
 		if GetBit(val, 0) {
 			mbc.memoryModel = 1
