@@ -16,18 +16,18 @@ type Memory struct {
 	emulator *Emulator
 }
 
-func (m *Memory) readIO(addr uint16) uint8 {
+func (mem *Memory) readIO(addr uint16) uint8 {
 	switch addr {
 	case 0xff00:
-		if (^m.io[256] & 16) != 0 {
-			keyboardState := m.emulator.window.GetKeyboardState()
+		if (^mem.io[256] & 16) != 0 {
+			keyboardState := mem.emulator.window.GetKeyboardState()
 			return ^(16 + keyboardState[sdl.SCANCODE_DOWN]*8 +
 				keyboardState[sdl.SCANCODE_UP]*4 +
 				keyboardState[sdl.SCANCODE_LEFT]*2 +
 				keyboardState[sdl.SCANCODE_RIGHT])
 		}
-		if (^m.io[256] & 32) != 0 {
-			keyboardState := m.emulator.window.GetKeyboardState()
+		if (^mem.io[256] & 32) != 0 {
+			keyboardState := mem.emulator.window.GetKeyboardState()
 			return ^(32 + keyboardState[sdl.SCANCODE_RETURN]*8 +
 				keyboardState[sdl.SCANCODE_TAB]*4 +
 				keyboardState[sdl.SCANCODE_Z]*2 +
@@ -36,7 +36,7 @@ func (m *Memory) readIO(addr uint16) uint8 {
 		return 0xFF
 	}
 	ioAddr := addr & 0x1ff
-	return m.io[ioAddr]
+	return mem.io[ioAddr]
 }
 
 func maskUnusedBits(addr uint16, val uint8) uint8 {
@@ -85,7 +85,7 @@ func maskUnusedBits(addr uint16, val uint8) uint8 {
 	return val
 }
 
-func (m *Memory) writeIO(addr uint16, val uint8) {
+func (mem *Memory) writeIO(addr uint16, val uint8) {
 	val = maskUnusedBits(addr, val)
 
 	switch addr {
@@ -93,27 +93,27 @@ func (m *Memory) writeIO(addr uint16, val uint8) {
 		// When writing to DIV, if the current output is 1 and timer is enabled,
 		// as the new value after reseting DIV will be 0,
 		// the falling edge detector will detect a falling edge and TIMA will increase.
-		if m.emulator.timer.isFallingEdgeWritingDIV() {
-			m.emulator.timer.increaseTIMA(1, false)
+		if mem.emulator.timer.isFallingEdgeWritingDIV() {
+			mem.emulator.timer.increaseTIMA(1, false)
 		}
 
 		// Reset Div timer
 		val = 0
-		m.emulator.timer.internalTimer = 0
+		mem.emulator.timer.internalTimer = 0
 	case 0xFF05: // TIMA: Timer counter
-		if m.emulator.timer.timaUpdateWithTMADelayedCycles == m.emulator.cycles {
+		if mem.emulator.timer.timaUpdateWithTMADelayedCycles == mem.emulator.cycles {
 			// If you write to TIMA during the cycle that TMA is being loaded to it [B],
 			// the write will be ignored and TMA value will be written to TIMA instead.
-			val = m.GetTMA()
+			val = mem.GetTMA()
 		} else {
 			// During the strange cycle [A] you can prevent the IF flag from being set
 			// and prevent the TIMA from being reloaded from TMA by writing a value to TIMA.
 			// That new value will be the one that stays in the TIMA register after the instruction.
-			m.emulator.timer.timaUpdateWithTMADelayedCycles = 0
+			mem.emulator.timer.timaUpdateWithTMADelayedCycles = 0
 		}
 	case 0xFF06: // TMA: Timer modulo
-		if m.emulator.timer.timaUpdateWithTMADelayedCycles == m.emulator.cycles {
-			m.SetTIMA(val)
+		if mem.emulator.timer.timaUpdateWithTMADelayedCycles == mem.emulator.cycles {
+			mem.SetTIMA(val)
 		}
 	case 0xFF07: // TAC: Timer Control
 		// When writing to TAC, if the previously selected multiplexer input was 1
@@ -121,28 +121,28 @@ func (m *Memory) writeIO(addr uint16, val uint8) {
 		// This doesn't happen when the timer is disabled,
 		// but it also happens when disabling the timer
 		// (the same effect as writing to DIV).
-		if m.emulator.timer.isFallingEdgeWritingTAC(val) {
+		if mem.emulator.timer.isFallingEdgeWritingTAC(val) {
 			// Writing to DIV, TAC or other registers won't prevent the IF flag from being set or
 			// TIMA from being reloaded.
-			m.emulator.timer.increaseTIMA(1, false)
+			mem.emulator.timer.increaseTIMA(1, false)
 		}
 	case 0xFF40: // LCDC: LCD control
-		m.SetLCDC(val)
+		mem.SetLCDC(val)
 	case 0xFF41: // STAT: LCD status
-		m.SetLCDStatus(val)
+		mem.SetLCDStatus(val)
 	case 0xFF46:
 		for y := WIDTH - 1; y >= 0; y-- {
-			m.io[y] = m.read8(uint16(val)<<8 | uint16(y))
+			mem.io[y] = mem.read8(uint16(val)<<8 | uint16(y))
 		}
 	case 0xFF50:
-		m.bootRomEnabled = false
+		mem.bootRomEnabled = false
 	}
 	ioAddr := addr & 0x1ff
-	m.io[ioAddr] = val
+	mem.io[ioAddr] = val
 }
 
-func (m *Memory) read8(addr uint16) uint8 {
-	m.emulator.tick()
+func (mem *Memory) read8(addr uint16) uint8 {
+	mem.emulator.tick()
 
 	if addr == 0xD800 {
 		//val = 00
@@ -151,72 +151,72 @@ func (m *Memory) read8(addr uint16) uint8 {
 
 	switch addr >> 13 {
 	case 0, 1: // 0x0000 - 0x3FFF, ROM Bank 00
-		if m.bootRomEnabled && addr <= 0xFF {
-			return m.bootRom[addr]
+		if mem.bootRomEnabled && addr <= 0xFF {
+			return mem.bootRom[addr]
 		}
-		value := m.rom.controller.Read(addr)
-		return m.emulator.getGameGenieValue(addr, value)
+		value := mem.rom.controller.Read(addr)
+		return mem.emulator.getGameGenieValue(addr, value)
 	case 2, 3: // 0x4000 - 0x7FFF, ROM Bank 01~NN
-		value := m.rom.controller.Read(addr)
-		return m.emulator.getGameGenieValue(addr, value)
+		value := mem.rom.controller.Read(addr)
+		return mem.emulator.getGameGenieValue(addr, value)
 	case 4: // 0x8000 - 0x9FFF, Video RAM (VRAM)
 		addr &= 0x1fff
-		return m.videoRam[addr]
+		return mem.videoRam[addr]
 	case 5: // 0xA000 - 0xBFFF, External RAM
-		return m.rom.controller.Read(addr)
+		return mem.rom.controller.Read(addr)
 	case 6: // 0xC000 - 0xDFFF, Work RAM (WRAM)
 		addr &= 0x3fff
-		return m.workRam[addr]
+		return mem.workRam[addr]
 	case 7: // 0xE000 - 0xFFFF
 		if addr <= 0xFDFF { // Echo internal RAM, 0xE000-0xFDFF
 			addr &= 0x3fff
-			return m.workRam[addr]
+			return mem.workRam[addr]
 		} else { // 0xFE00-0xFFFF, OAM, I/O, High RAM (HRAM) and Interrupt Enable register (IE)
-			return m.readIO(addr)
+			return mem.readIO(addr)
 		}
 	}
 
 	return 0
 }
 
-func (m *Memory) write8(addr uint16, val uint8) {
-	m.emulator.tick()
+func (mem *Memory) write8(addr uint16, val uint8) {
+	mem.emulator.tick()
 
 	switch addr >> 13 {
 	case 0, 1: // 0x0000 - 0x3FFF, ROM Bank 00
-		if m.bootRomEnabled && addr <= 0xFF {
+		if mem.bootRomEnabled && addr <= 0xFF {
 			return
 		}
-		m.rom.controller.Write(addr, val)
+		mem.rom.controller.Write(addr, val)
 	case 2, 3: // 0x4000 - 0x7FFF, ROM Bank 01~NN
-		m.rom.controller.Write(addr, val)
+		mem.rom.controller.Write(addr, val)
 	case 4: // 0x8000 - 0x9FFF, Video RAM (VRAM)
 		addr &= 0x1fff
-		m.videoRam[addr] = val
+		mem.videoRam[addr] = val
 	case 5: // 0xA000 - 0xBFFF, External RAM
-		m.rom.controller.Write(addr, val)
+		mem.rom.controller.Write(addr, val)
 	case 6: // 0xC000 - 0xDFFF, Work RAM (WRAM)
 		addr &= 0x3fff
-		m.workRam[addr] = val
+		mem.workRam[addr] = val
 	case 7: // 0xE000 - 0xFFFF
 		if addr <= 0xFDFF { // Echo internal RAM, 0xE000-0xFDFF
 			addr &= 0x3fff
-			m.workRam[addr] = val
+			mem.workRam[addr] = val
 		} else { // 0xFE00-0xFFFF, OAM, I/O, High RAM (HRAM) and Interrupt Enable register (IE)
-			m.writeIO(addr, val)
+			mem.writeIO(addr, val)
 		}
 	}
 }
 
-func (m *Memory) read16(addr uint16) uint16 {
-	tmp8 := m.read8(addr)
+func (mem *Memory) read16(addr uint16) uint16 {
+	tmp8 := mem.read8(addr)
 	addr++
-	result := m.read8(addr)
+	result := mem.read8(addr)
 	return uint16(result)<<8 | uint16(tmp8)
 }
 
-func (m *Memory) write16(addr uint16, val uint16) {
-	m.write8(addr, uint8(val))
+func (mem *Memory) write16(addr uint16, val uint16) {
+	mem.write8(addr, uint8(val))
 	addr++
-	m.write8(addr, uint8(val>>8))
+	mem.write8(addr, uint8(val>>8))
 }
