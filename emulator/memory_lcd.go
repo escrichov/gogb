@@ -20,64 +20,92 @@ type LCDStatus struct {
 	ModeFlag                       uint8 // Bit 1-0, 0: HBlank, 1: VBlank, 2: Searching OAM, 3: Transferring Data to LCD Controller
 }
 
-func (m *Memory) SetLY(value uint8) {
-	m.io[324] = value
+func (mem *Memory) SetLY(value uint8) {
+	mem.io[324] = value
 }
 
-func (m *Memory) GetLY() uint8 {
-	return m.io[324]
+func (mem *Memory) GetLY() uint8 {
+	return mem.io[324]
 }
 
-func (m *Memory) GetLYC() uint8 {
-	return m.io[325]
+func (mem *Memory) GetLYC() uint8 {
+	return mem.io[325]
 }
 
-func (m *Memory) GetLCDC() *LCDControl {
-	return &m.lcdcControl
+func (mem *Memory) GetLCDC() *LCDControl {
+	return &mem.lcdcControl
 }
 
-func (m *Memory) SetLCDC(value uint8) {
-	m.io[320] = value
-	m.lcdcControl.LCDPPUEnable = GetBit(value, 7)
-	m.lcdcControl.WindowTileMapArea = GetBit(value, 6)
-	m.lcdcControl.WindowEnable = GetBit(value, 5)
-	m.lcdcControl.BgWindowTileDataArea = GetBit(value, 4)
-	m.lcdcControl.BgTileMapArea = GetBit(value, 3)
-	m.lcdcControl.ObjSize = GetBit(value, 2)
-	m.lcdcControl.ObjEnable = GetBit(value, 1)
-	m.lcdcControl.BgWindowEnablePriority = GetBit(value, 0)
+func (mem *Memory) GetWY() uint8 {
+	return mem.io[330]
 }
 
-func (m *Memory) SaveLCDC() {
-	m.io[320] = (BoolToUint8(m.lcdcControl.LCDPPUEnable) << 7) |
-		(BoolToUint8(m.lcdcControl.WindowTileMapArea) << 6) |
-		(BoolToUint8(m.lcdcControl.WindowEnable) << 5) |
-		(BoolToUint8(m.lcdcControl.BgWindowTileDataArea) << 4) |
-		(BoolToUint8(m.lcdcControl.BgTileMapArea) << 3) |
-		(BoolToUint8(m.lcdcControl.ObjSize) << 2) |
-		(BoolToUint8(m.lcdcControl.ObjEnable) << 1) |
-		BoolToUint8(m.lcdcControl.BgWindowEnablePriority)
+func (mem *Memory) GetWX() uint8 {
+	return mem.io[331]
 }
 
-func (m *Memory) GetLCDStatus() *LCDStatus {
-	return &m.lcdStatus
+func (mem *Memory) GetSCY() uint8 {
+	return mem.io[322]
 }
 
-func (m *Memory) SetLCDStatus(value uint8) {
-	m.io[321] = value
-	m.lcdStatus.LYCLYSTATInterruptSource = GetBit(value, 6)
-	m.lcdStatus.Mode2OAMSTATInterruptSource = GetBit(value, 5)
-	m.lcdStatus.Mode1VBlankSTATInterruptSource = GetBit(value, 4)
-	m.lcdStatus.Mode0HBlankSTATInterruptSource = GetBit(value, 3)
-	m.lcdStatus.LYCLYFlag = GetBit(value, 2)
-	m.lcdStatus.ModeFlag = value & 0x3
+func (mem *Memory) GetSCX() uint8 {
+	return mem.io[323]
 }
 
-func (m *Memory) SaveLCDStatus() {
-	m.io[321] = (BoolToUint8(m.lcdStatus.LYCLYSTATInterruptSource) << 6) |
-		(BoolToUint8(m.lcdStatus.Mode2OAMSTATInterruptSource) << 5) |
-		(BoolToUint8(m.lcdStatus.Mode1VBlankSTATInterruptSource) << 4) |
-		(BoolToUint8(m.lcdStatus.Mode0HBlankSTATInterruptSource) << 3) |
-		(BoolToUint8(m.lcdStatus.LYCLYFlag) << 2) |
-		m.lcdStatus.ModeFlag
+func (mem *Memory) GetBGP() uint8 {
+	return mem.io[328]
+}
+
+func (mem *Memory) GetOBP0() uint8 {
+	return mem.io[328]
+}
+
+func (mem *Memory) GetOBP1() uint8 {
+	return mem.io[329]
+}
+
+func (mem *Memory) SetLCDC(value uint8) {
+	mem.io[320] = value
+	mem.lcdcControl.LCDPPUEnable = GetBit(value, 7)
+	mem.lcdcControl.WindowTileMapArea = GetBit(value, 6)
+	mem.lcdcControl.WindowEnable = GetBit(value, 5)
+	mem.lcdcControl.BgWindowTileDataArea = GetBit(value, 4)
+	mem.lcdcControl.BgTileMapArea = GetBit(value, 3)
+	mem.lcdcControl.ObjSize = GetBit(value, 2)
+	mem.lcdcControl.ObjEnable = GetBit(value, 1)
+	mem.lcdcControl.BgWindowEnablePriority = GetBit(value, 0)
+}
+
+func (mem *Memory) SaveLCDC() {
+	mem.io[320] = (BoolToUint8(mem.lcdcControl.LCDPPUEnable) << 7) |
+		(BoolToUint8(mem.lcdcControl.WindowTileMapArea) << 6) |
+		(BoolToUint8(mem.lcdcControl.WindowEnable) << 5) |
+		(BoolToUint8(mem.lcdcControl.BgWindowTileDataArea) << 4) |
+		(BoolToUint8(mem.lcdcControl.BgTileMapArea) << 3) |
+		(BoolToUint8(mem.lcdcControl.ObjSize) << 2) |
+		(BoolToUint8(mem.lcdcControl.ObjEnable) << 1) |
+		BoolToUint8(mem.lcdcControl.BgWindowEnablePriority)
+}
+
+func (mem *Memory) GetLCDStatus() *LCDStatus {
+	return &mem.lcdStatus
+}
+
+func (mem *Memory) SetLCDStatus(value uint8) {
+	mem.io[321] = value
+	mem.lcdStatus.LYCLYSTATInterruptSource = GetBit(value, 6)
+	mem.lcdStatus.Mode2OAMSTATInterruptSource = GetBit(value, 5)
+	mem.lcdStatus.Mode1VBlankSTATInterruptSource = GetBit(value, 4)
+	mem.lcdStatus.Mode0HBlankSTATInterruptSource = GetBit(value, 3)
+	mem.lcdStatus.LYCLYFlag = GetBit(value, 2)
+	mem.lcdStatus.ModeFlag = value & 0x3
+}
+
+func (mem *Memory) SaveLCDStatus() {
+	mem.io[321] = (BoolToUint8(mem.lcdStatus.LYCLYSTATInterruptSource) << 6) |
+		(BoolToUint8(mem.lcdStatus.Mode2OAMSTATInterruptSource) << 5) |
+		(BoolToUint8(mem.lcdStatus.Mode1VBlankSTATInterruptSource) << 4) |
+		(BoolToUint8(mem.lcdStatus.Mode0HBlankSTATInterruptSource) << 3) |
+		(BoolToUint8(mem.lcdStatus.LYCLYFlag) << 2) |
+		mem.lcdStatus.ModeFlag
 }
