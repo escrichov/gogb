@@ -24,37 +24,37 @@ func parseTimerControl(tac uint8) TimerControl {
 }
 
 // GetDIV Get Internal Divider Register
-func (m *Memory) GetDIV() uint8 {
-	return m.io[260]
+func (mem *Memory) GetDIV() uint8 {
+	return mem.io[260]
 }
 
 // SetDIV Set divider counter
-func (m *Memory) SetDIV(value uint8) {
-	m.io[260] = value
+func (mem *Memory) SetDIV(value uint8) {
+	mem.io[260] = value
 }
 
 // GetTIMA Get Internal Timer Counter
-func (m *Memory) GetTIMA() uint8 {
-	return m.io[261]
+func (mem *Memory) GetTIMA() uint8 {
+	return mem.io[261]
 }
 
 // SetTIMA Set Internal Timer Counter
-func (m *Memory) SetTIMA(value uint8) {
-	m.io[261] = value
+func (mem *Memory) SetTIMA(value uint8) {
+	mem.io[261] = value
 }
 
 // GetTMA Get Timer Modulo 0xFF06
-func (m *Memory) GetTMA() uint8 {
-	return m.io[262]
+func (mem *Memory) GetTMA() uint8 {
+	return mem.io[262]
 }
 
 // SetTMA Set Timer Modulo 0xFF06
-func (m *Memory) SetTMA(value uint8) {
-	m.io[262] = value
+func (mem *Memory) SetTMA(value uint8) {
+	mem.io[262] = value
 }
 
 // GetTAC Timer Control 0xFF07
-func (m *Memory) GetTAC() TimerControl {
-	tac := m.io[263]
+func (mem *Memory) GetTAC() TimerControl {
+	tac := mem.io[263]
 	return parseTimerControl(tac)
 }
