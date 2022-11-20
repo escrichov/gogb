@@ -12,7 +12,8 @@ func main() {
 		//"./assets/roms/bootroms/dmg_boot.bin",
 		"",
 		"./assets/fonts/arial.ttf",
-		true)
+		true,
+		false)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -23,5 +24,5 @@ func main() {
 	//	log.Fatal(err)
 	//}
 
-	emu.Run()
+	emu.Run(0)
 }

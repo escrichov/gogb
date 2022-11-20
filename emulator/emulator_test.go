@@ -6,9 +6,10 @@ import (
 
 func TestCreateDestroyEmulator(t *testing.T) {
 	e, err := NewEmulator(
-		"../assets/roms/bgbtest.gb",
+		"../assets/roms/roms/bgbtest.gb",
 		"",
 		"../assets/fonts/arial.ttf",
+		false,
 		false,
 	)
 	if err != nil {
@@ -22,13 +23,14 @@ func RomTester(t *testing.T, romFilename, originalScreenshotFilename string, run
 		romFilename,
 		"",
 		"../assets/fonts/arial.ttf",
+		false,
 		false)
 	if err != nil {
 		t.Fatalf(`Failed to create emulator: %v`, err)
 	}
 	defer e.Destroy()
 
-	e.RunTest(runCycles)
+	e.Run(runCycles)
 
 	err = e.window.TakeSnapshot("../screenshots/test.png")
 	if err != nil {

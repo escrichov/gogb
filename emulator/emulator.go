@@ -37,9 +37,10 @@ type Emulator struct {
 	stop            bool
 	pause           bool
 	reset           bool
+	showWindow      bool
 }
 
-func NewEmulator(romFilename, bootRomFilename, fontFilename string, showWindow bool) (*Emulator, error) {
+func NewEmulator(romFilename, bootRomFilename, fontFilename string, showWindow, vsyncAtStartup bool) (*Emulator, error) {
 	var err error
 
 	emulator := Emulator{
@@ -49,9 +50,10 @@ func NewEmulator(romFilename, bootRomFilename, fontFilename string, showWindow b
 			ppuDot:     32,
 			paletteBGP: []uint32{0xFFFFFFFF, 0xFFFFA563, 0xFFFF0000, 0xFF000000},
 			paletteOB0: []uint32{0xFFFFFFFF, 0xFF8484FF, 0xFF3A3A94, 0xFF000000},
-			paletteOB1: []uint32{0xFFFFFFFF, 0xFF8484FF, 0xFF3A3A94, 0xFF000000},
+			paletteOB1: []uint32{0xFFFFFFFF, 0xFFFFA563, 0xFFFF0000, 0xFF000000},
 		},
-		timer: Timer{internalTimer: 8},
+		timer:      Timer{internalTimer: 8},
+		showWindow: showWindow,
 	}
 	emulator.mem.emulator = &emulator
 	emulator.timer.emulator = &emulator
@@ -75,6 +77,7 @@ func NewEmulator(romFilename, bootRomFilename, fontFilename string, showWindow b
 		fontFilename,
 		4.0,
 		showWindow,
+		vsyncAtStartup,
 	)
 
 	emulator.PrintCartridge()
@@ -86,42 +89,7 @@ func (e *Emulator) Destroy() {
 	e.window.Destroy()
 }
 
-func (e *Emulator) RunTest(numCycles uint64) {
-	e.stop = false
-	for {
-		e.prevCycles = e.cycles
-		if e.hastToManageInterrupts() {
-			e.manageInterrupts()
-		} else if e.halt != 0 {
-			e.HaltRun()
-		} else {
-			e.CPURun()
-		}
-
-		e.timer.incrementTimers(uint16(e.cycles - e.prevCycles))
-		e.serialTransfer()
-
-		renderFrame := e.PPURun()
-		if renderFrame {
-			e.window.renderFrame()
-		}
-
-		// Paused state
-		for e.pause {
-			e.window.renderFrame()
-		}
-
-		if e.stop {
-			break
-		}
-
-		if numCycles != 0 && e.cycles >= numCycles {
-			break
-		}
-	}
-}
-
-func (e *Emulator) Run() {
+func (e *Emulator) Run(numCycles uint64) {
 	e.stop = false
 	for {
 		if e.reset {
@@ -143,17 +111,25 @@ func (e *Emulator) Run() {
 		renderFrame := e.PPURun()
 		if renderFrame {
 			e.window.renderFrame()
-			e.manageKeyboardEvents()
+			if e.showWindow {
+				e.manageKeyboardEvents()
+			}
 		}
 
 		// Paused state
 		for e.pause {
 			e.window.renderFrame()
-			e.manageKeyboardEvents()
+			if e.showWindow {
+				e.manageKeyboardEvents()
+			}
 			time.Sleep(time.Millisecond * 1000 / 60.0)
 		}
 
 		if e.stop {
+			break
+		}
+
+		if numCycles != 0 && e.cycles >= numCycles {
 			break
 		}
 	}
