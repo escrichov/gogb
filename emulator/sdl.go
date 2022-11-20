@@ -45,15 +45,15 @@ type Window struct {
 	consoleMessageStart    time.Time
 }
 
-func newWindow(title string, fontFilename string, windowScale float64, showWindow bool) (*Window, error) {
+func newWindow(title string, fontFilename string, windowScale float64, showWindow bool, vsyncAtStartup bool) (*Window, error) {
 	window := &Window{
-		vsyncEnabled: true,
+		vsyncEnabled: vsyncAtStartup,
 		showFPS:      false,
 		showMessage:  false,
 		showWindow:   showWindow,
 	}
 
-	err := window.initializeSDL(title, fontFilename, windowScale)
+	err := window.initializeSDL(title, fontFilename, windowScale, window.vsyncEnabled)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (w *Window) Destroy() {
 	sdl.Quit()
 }
 
-func (w *Window) initializeSDL(windowName, fontFilename string, windowScale float64) error {
+func (w *Window) initializeSDL(windowName, fontFilename string, windowScale float64, vsyncEnable bool) error {
 	var err error
 
 	// SDL Initialization
@@ -102,7 +102,11 @@ func (w *Window) initializeSDL(windowName, fontFilename string, windowScale floa
 			return err
 		}
 
-		w.renderer, err = sdl.CreateRenderer(w.window, -1, sdl.RENDERER_PRESENTVSYNC|sdl.RENDERER_ACCELERATED)
+		flags := uint32(sdl.RENDERER_ACCELERATED)
+		if vsyncEnable {
+			flags |= sdl.RENDERER_PRESENTVSYNC
+		}
+		w.renderer, err = sdl.CreateRenderer(w.window, -1, flags)
 		if err != nil {
 			return err
 		}
@@ -351,6 +355,11 @@ func (w *Window) ToggleVsync() {
 func (w *Window) SetVsync(active bool) {
 	w.vsyncEnabled = active
 	w.renderer.RenderSetVSync(w.vsyncEnabled)
+	if w.vsyncEnabled {
+		sdl.GLSetSwapInterval(1)
+	} else {
+		sdl.GLSetSwapInterval(0)
+	}
 }
 
 func (w *Window) GetVsync() bool {
