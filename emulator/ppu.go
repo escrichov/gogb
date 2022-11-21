@@ -20,6 +20,25 @@ const (
 	tilesPerRow       = 32 // Tilemap size 32 x 32 => In each row there are 32 tiles
 )
 
+type SpriteObject struct {
+	tileIndex uint8
+	xPosition uint8
+	yPosition uint8
+	flags     uint8
+
+	bgWindowOverOBJ  bool
+	yFlip            bool
+	xFlip            bool
+	paletteIndex     uint8
+	tileVRAMBank     uint8
+	paletteNumberCGB uint8
+}
+
+type PPUColor struct {
+	paletteIndex uint8
+	colorIndex   uint8
+}
+
 type PPU struct {
 	paletteBGP []uint32
 	paletteOB0 []uint32
@@ -27,7 +46,7 @@ type PPU struct {
 	ppuDot     int
 
 	// OAM Scan
-	spritesSelected    [10]uint8
+	spritesSelected    [10]SpriteObject
 	numSpritesSelected int
 }
 
@@ -139,22 +158,18 @@ func (e *Emulator) getXYBackground(currentX uint8) (uint8, uint8) {
 	return x, y
 }
 
-func (e *Emulator) getXYSprite(spriteAddress uint16, currentX uint8) (uint8, uint8) {
+func (e *Emulator) getXYSprite(sprite *SpriteObject, currentX uint8) (uint8, uint8) {
 	ly := e.mem.GetLY()
-	oamYPosition := e.mem.io[spriteAddress]
-	oamXPosition := e.mem.io[spriteAddress+1]
-	oamFlags := e.mem.io[spriteAddress+3]
-
-	var x = currentX - oamXPosition + 8
-	var y = ly - oamYPosition + 16
+	var x = currentX - sprite.xPosition + 8
+	var y = ly - sprite.yPosition + 16
 
 	// Flip x
-	if GetBit(oamFlags, 5) {
+	if sprite.xFlip {
 		x = e.flipTileXPosition(x)
 	}
 
 	// Flip y
-	if GetBit(oamFlags, 6) {
+	if sprite.yFlip {
 		y = e.flipTileYPosition(y)
 	}
 
@@ -214,7 +229,7 @@ func (e *Emulator) getTileIndex(isWindow bool, x, y uint8) int {
 	return e.getTileIndexFromTileNumber(tileNumber)
 }
 
-func (e *Emulator) getBGWindowColor(currentX uint8) uint8 {
+func (e *Emulator) getBGWindowColor(currentX uint8) PPUColor {
 	// IsWindow
 	isWindow := e.isInsideWindow(currentX)
 
@@ -229,22 +244,20 @@ func (e *Emulator) getBGWindowColor(currentX uint8) uint8 {
 	xPixel := xOffset & 7
 	color := e.getColorFromVRAM(tileIndex, xPixel, yPixel)
 
-	return color
+	return PPUColor{paletteIndex: paletteBGP, colorIndex: color}
 }
 
-func (e *Emulator) spriteHasPriorityOverBG(spriteAddress uint16, spriteColor uint8, backgroundColor uint8) bool {
-	oamFlags := e.mem.io[spriteAddress+3]
-	// OAM
-	// Bit7   BG and Window over OBJ (0=No, 1=BG and Window colors 1-3 over the OBJ)
-
+func (e *Emulator) spriteHasPriorityOverBG(sprite *SpriteObject, spriteColor uint8, backgroundColor uint8) bool {
 	// Has priority if all conditions are met:
 	// * Sprite color is not transparent (color != 0)
 	if spriteColor == 0 {
 		return false
 	}
 
+	// OAM
+	// Bit7   BG and Window over OBJ (0=No, 1=BG and Window colors 1-3 over the OBJ)
 	// * OAM Flag bit Bit7 (BG and Window over OBJ) == 0 || OAM Flag bit Bit7 (BG and Window over OBJ) == 1 and backgroundColor = 0
-	if GetBit(oamFlags, 7) {
+	if sprite.bgWindowOverOBJ {
 		if backgroundColor == 0 {
 			return true
 		} else {
@@ -264,26 +277,10 @@ func (e *Emulator) flipTileYPosition(position uint8) uint8 {
 	return position ^ (height - 1) // This reverse values: 0-7 -> 7-0 or 0-15 -> 15-0
 }
 
-func (e *Emulator) getSpriteIfHasPriority(spriteIndex uint8, currentX uint8, backgroundColor uint8) (bool, uint8, uint8) {
-	spriteAddress := uint16(spriteIndex * spriteOAMSize)
-	oamTileIndex := e.mem.io[spriteAddress+2]
-	oamFlags := e.mem.io[spriteAddress+3]
-
-	if e.isSpriteIsInColumn(spriteIndex, currentX) {
-		pixelX, pixelY := e.getXYSprite(spriteAddress, currentX)
-		spriteColor := e.getColorFromVRAM(int(oamTileIndex), pixelX, pixelY)
-		if e.spriteHasPriorityOverBG(spriteAddress, spriteColor, backgroundColor) {
-			var paletteIndex uint8
-			if GetBit(oamFlags, 7) {
-				paletteIndex = paletteOBP1 // OBP1
-			} else {
-				paletteIndex = paletteOBP0 // OBP0
-			}
-			return true, spriteColor, paletteIndex
-		}
-	}
-
-	return false, 0, 0
+func (e *Emulator) getSpriteColor(sprite *SpriteObject, currentX uint8) PPUColor {
+	pixelX, pixelY := e.getXYSprite(sprite, currentX)
+	spriteColor := e.getColorFromVRAM(int(sprite.tileIndex), pixelX, pixelY)
+	return PPUColor{paletteIndex: sprite.paletteIndex, colorIndex: spriteColor}
 }
 
 func (e *Emulator) getPaletteValue(paletteIndex uint8) uint8 {
@@ -291,9 +288,9 @@ func (e *Emulator) getPaletteValue(paletteIndex uint8) uint8 {
 	return e.mem.io[327+uint16(paletteIndex)]
 }
 
-func (e *Emulator) getColorFromPalette(paletteIndex uint8, colorIndex uint8) uint8 {
-	paletteValue := e.getPaletteValue(paletteIndex)
-	color := (paletteValue >> (colorIndex * 2)) & 0x3
+func (e *Emulator) getColorFromPalette(ppuColor *PPUColor) uint8 {
+	paletteValue := e.getPaletteValue(ppuColor.paletteIndex)
+	color := (paletteValue >> (ppuColor.colorIndex * 2)) & 0x3
 	return color
 }
 
@@ -322,20 +319,41 @@ func (e *Emulator) getObjectHeight() uint8 {
 	return height
 }
 
+func (object *SpriteObject) saveSpriteData(spriteData []byte) {
+	flags := spriteData[3]
+
+	object.yPosition = spriteData[0]
+	object.xPosition = spriteData[1]
+	object.tileIndex = spriteData[2]
+	object.flags = flags
+	object.bgWindowOverOBJ = GetBit(flags, 7)
+	object.yFlip = GetBit(flags, 6)
+	object.xFlip = GetBit(flags, 5)
+	if GetBit(flags, 4) {
+		object.paletteIndex = paletteOBP1 // OBP1
+	} else {
+		object.paletteIndex = paletteOBP0 // OBP0
+	}
+
+	object.tileVRAMBank = BoolToUint8(GetBit(flags, 3))
+}
+
 func (e *Emulator) oamScan() {
 	ly := e.mem.GetLY()
 	e.ppu.numSpritesSelected = 0
 
 	for spriteIndex := uint8(0); spriteIndex < numSpritesInOAM; spriteIndex++ {
 		if e.isSpriteIsInLine(spriteIndex, ly) {
-			e.ppu.spritesSelected[e.ppu.numSpritesSelected] = spriteIndex
+			spriteAddress := spriteIndex * spriteOAMSize
+			e.ppu.spritesSelected[e.ppu.numSpritesSelected].saveSpriteData(e.mem.io[spriteAddress : spriteAddress+4])
 			e.ppu.numSpritesSelected++
-
 			if e.ppu.numSpritesSelected == 10 {
 				break
 			}
 		}
 	}
+
+	// Sort sprites by x position
 }
 
 func (e *Emulator) isSpriteIsInLine(spriteIndex uint8, currentY uint8) bool {
@@ -354,10 +372,8 @@ func (e *Emulator) isSpriteIsInLine(spriteIndex uint8, currentY uint8) bool {
 	}
 }
 
-func (e *Emulator) isSpriteIsInColumn(spriteIndex uint8, currentX uint8) bool {
-	spriteAddress := spriteIndex * spriteOAMSize
-
-	spriteXPosition := int(e.mem.io[spriteAddress+1]) - 8
+func (e *Emulator) isSpriteIsInColumn(sprite *SpriteObject, currentX uint8) bool {
+	spriteXPosition := int(sprite.xPosition) - 8
 	spriteLowerBound := spriteXPosition
 	spriteUpperBound := spriteXPosition + 8
 
@@ -380,26 +396,27 @@ func (e *Emulator) proccessScanline() {
 		currentX := uint8(tmp)
 
 		// Get Background or Window pixel
-		colorIndex := e.getBGWindowColor(currentX)
-		paletteIndex := paletteBGP
+		color := e.getBGWindowColor(currentX)
 
 		// Get sprite pixel
 		if lcdc.ObjEnable {
 			// Traverse only selected sprites
 			for i := 0; i < e.ppu.numSpritesSelected; i++ {
 				// If sprite has priority override color
-				hasPriority, spriteColor, spritePalette := e.getSpriteIfHasPriority(e.ppu.spritesSelected[i], currentX, colorIndex)
-				if hasPriority {
-					colorIndex = spriteColor
-					paletteIndex = spritePalette
+				sprite := &e.ppu.spritesSelected[i]
+				if e.isSpriteIsInColumn(sprite, currentX) {
+					spriteColor := e.getSpriteColor(sprite, currentX)
+					if e.spriteHasPriorityOverBG(sprite, spriteColor.colorIndex, color.colorIndex) {
+						color = spriteColor
+					}
 				}
 			}
 		}
 
 		// Save color in framebuffer
-		color := e.getColorFromPalette(paletteIndex, colorIndex)
+		paletteColor := e.getColorFromPalette(&color)
 		frameBufferIndex := getBufferPositionFromXY(int(currentX), int(ly), WIDTH)
-		framebuffer[frameBufferIndex] = e.getDisplayColor(paletteIndex, color)
+		framebuffer[frameBufferIndex] = e.getDisplayColor(color.paletteIndex, paletteColor)
 	}
 }
 
