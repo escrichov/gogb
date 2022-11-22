@@ -431,7 +431,7 @@ func (e *Emulator) proccessScanline() {
 	}
 }
 
-func (e *Emulator) PPURun() bool {
+func (e *Emulator) PPURunOld() bool {
 	renderFrame := false
 	e.setLCDStatus()
 
