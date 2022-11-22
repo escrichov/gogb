@@ -97,8 +97,6 @@ func (mem *Memory) SetLCDStatus(value uint8) {
 	mem.lcdStatus.Mode2OAMSTATInterruptSource = GetBit(value, 5)
 	mem.lcdStatus.Mode1VBlankSTATInterruptSource = GetBit(value, 4)
 	mem.lcdStatus.Mode0HBlankSTATInterruptSource = GetBit(value, 3)
-	mem.lcdStatus.LYCLYFlag = GetBit(value, 2)
-	mem.lcdStatus.ModeFlag = value & 0x3
 }
 
 func (mem *Memory) SaveLCDStatus() {

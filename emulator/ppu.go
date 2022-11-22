@@ -70,10 +70,6 @@ func (e *Emulator) setLCDStatus() {
 	lcdcControl := e.mem.GetLCDC()
 
 	if !lcdcControl.LCDPPUEnable {
-		status.LYCLYSTATInterruptSource = false
-		status.Mode2OAMSTATInterruptSource = false
-		status.Mode1VBlankSTATInterruptSource = false
-		status.Mode0HBlankSTATInterruptSource = false
 		status.LYCLYFlag = false
 		status.ModeFlag = 0
 	}
