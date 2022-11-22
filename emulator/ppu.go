@@ -1,5 +1,7 @@
 package emulator
 
+import "sort"
+
 const (
 	lcdMode2Bounds = 80
 	lcdMode3Bounds = lcdMode2Bounds + 172
@@ -33,6 +35,14 @@ type SpriteObject struct {
 	tileVRAMBank     uint8
 	paletteNumberCGB uint8
 }
+
+// ByXPosition implements sort.Interface for []SpriteObject based on
+// the xPosition field.
+type ByXPosition []SpriteObject
+
+func (a ByXPosition) Len() int           { return len(a) }
+func (a ByXPosition) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByXPosition) Less(i, j int) bool { return a[i].xPosition < a[j].xPosition }
 
 type PPUColor struct {
 	paletteIndex uint8
@@ -353,7 +363,10 @@ func (e *Emulator) oamScan() {
 		}
 	}
 
-	// Sort sprites by x position
+	// Sort sprites by priority
+	// In Non-CGB mode, the smaller the X coordinate, the higher the priority. When X coordinates are identical, the object located first in OAM has higher priority.
+	// In CGB mode, only the object’s location in OAM determines its priority. The earlier the object, the higher its priority.
+	sort.Stable(ByXPosition(e.ppu.spritesSelected[:e.ppu.numSpritesSelected]))
 }
 
 func (e *Emulator) isSpriteIsInLine(spriteIndex uint8, currentY uint8) bool {
@@ -408,8 +421,10 @@ func (e *Emulator) proccessScanline() {
 					spriteColor := e.getSpriteColor(sprite, currentX)
 					if e.spriteHasPriorityOverBG(sprite, spriteColor.colorIndex, color.colorIndex) {
 						color = spriteColor
+						break
 					}
 				}
+
 			}
 		}
 
