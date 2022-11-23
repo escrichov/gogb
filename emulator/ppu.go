@@ -176,7 +176,7 @@ func (e *Emulator) isInsideWindow(currentX uint8) bool {
 	wy := e.mem.GetWY()
 
 	isWindow := false
-	if lcdc.WindowEnable && ly >= wy && currentX >= (wx-7) {
+	if lcdc.WindowEnable && ly >= wy && currentX+7 >= wx {
 		isWindow = true
 	}
 
