@@ -46,7 +46,6 @@ func (e *Emulator) PPURun() bool {
 	// PPU
 	cyclesElapsed := e.cycles - e.prevCycles
 	for i := uint64(0); i < cyclesElapsed; i++ {
-		e.setLCDStatus()
 		renderFrame = e.PPURunCycle()
 		if renderFrame {
 			e.window.renderFrame()
@@ -59,9 +58,54 @@ func (e *Emulator) PPURun() bool {
 	return renderFrame
 }
 
+func (ppu *PPU) isEndOfScanline() bool {
+	if ppu.ppuDot == 0 {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (ppu *PPU) isBeginOfVBlank(ly uint8) bool {
+	if ly == HEIGHT {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (e *Emulator) incrementWindowLineCounter(ly uint8) {
+	if ly == 0 {
+		e.ppu.windowLineCounter = 0
+	} else {
+		if e.isWindowVisible() {
+			e.ppu.windowLineCounter++
+		}
+	}
+}
+
 func (e *Emulator) PPURunCycleEnabled() bool {
 	ly := e.mem.GetLY()
 	renderFrame := false
+
+	// Scanline (Every 456 PPU Dots)
+	e.ppu.ppuDot = (e.ppu.ppuDot + 1) % 456
+	if e.ppu.isEndOfScanline() {
+		// Increment Line
+		ly = (ly + 1) % 154
+		e.mem.SetLY(ly)
+
+		// Interrupt VBlank and draw frame
+		if e.ppu.isBeginOfVBlank(ly) {
+			e.mem.requestInterruptVBlank()
+			renderFrame = true
+		}
+
+		// Increment window internal line counter
+		e.incrementWindowLineCounter(ly)
+	}
+
+	e.updateLCDStatus()
 
 	// Modes 2 (OAM scan) & 3 (Drawing pixels)
 	if ly < HEIGHT {
@@ -70,31 +114,6 @@ func (e *Emulator) PPURunCycleEnabled() bool {
 		} else if e.ppu.ppuDot == 369 {
 			e.drawScanline()
 		}
-	}
-
-	// Scanline (Every 456 PPU Dots)
-	if e.ppu.ppuDot == 456 {
-		// Interrupt VBlank and draw frame
-		if ly == (HEIGHT - 1) {
-			e.mem.requestInterruptVBlank()
-			renderFrame = true
-		}
-
-		// Increment Line
-		ly = (ly + 1) % 154
-		e.mem.SetLY(ly)
-
-		// Increment window internal line counter
-		if ly == 0 {
-			e.ppu.windowLineCounter = 0
-		} else {
-			if e.isWindowVisible() {
-				e.ppu.windowLineCounter = (e.ppu.windowLineCounter + 1) % 154
-			}
-		}
-		e.ppu.ppuDot = 0
-	} else {
-		e.ppu.ppuDot++
 	}
 
 	return renderFrame
@@ -110,6 +129,11 @@ func (e *Emulator) PPURunCycle() bool {
 		e.mem.SetLY(0)
 		e.ppu.windowLineCounter = 0
 		e.ppu.ppuDot = 0
+
+		status := e.mem.GetLCDStatus()
+		status.LYCLYFlag = false
+		status.ModeFlag = 0
+		e.mem.SaveLCDStatus()
 	}
 
 	return renderFrame

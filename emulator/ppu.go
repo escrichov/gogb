@@ -61,9 +61,6 @@ type PPU struct {
 	spritesSelected    [10]SpriteObject
 	numSpritesSelected int
 
-	// LY=LYC
-	previousLYLYC uint8
-
 	// Window counter
 	windowLineCounter uint8
 }
@@ -72,57 +69,76 @@ func getBufferPositionFromXY(x, y, width int) int {
 	return y*width + x
 }
 
-// Set the status of the LCD based on the current state of memory.
-func (e *Emulator) setLCDStatus() {
-	status := e.mem.GetLCDStatus()
-	lcdcControl := e.mem.GetLCDC()
+func (e *Emulator) getPPUMode() uint8 {
 	ly := e.mem.GetLY()
 
-	if !lcdcControl.LCDPPUEnable {
-		status.LYCLYFlag = false
-		status.ModeFlag = 0
-		e.mem.SaveLCDStatus()
+	var mode uint8
+	if ly >= 144 {
+		mode = 1
+	} else if ly < 144 {
+		if e.ppu.ppuDot <= lcdMode2Bounds {
+			mode = 2
+		} else if e.ppu.ppuDot <= lcdMode3Bounds {
+			mode = 3
+		} else {
+			mode = 0
+		}
+	}
+
+	return mode
+}
+
+func (e *Emulator) isInterruptModeEnable(mode uint8) bool {
+	status := e.mem.GetLCDStatus()
+
+	switch mode {
+	case 0:
+		return status.Mode0HBlankSTATInterruptSource
+	case 1:
+		return status.Mode1VBlankSTATInterruptSource
+	case 2:
+		return status.Mode2OAMSTATInterruptSource
+	}
+
+	return false
+}
+
+func (e *Emulator) lyCompare() {
+	if e.ppu.ppuDot != 0 {
 		return
 	}
 
-	previousMode := status.ModeFlag
-	requestInterrupt := false
-	if ly >= 144 {
-		status.ModeFlag = 1
-		requestInterrupt = status.Mode1VBlankSTATInterruptSource
-	} else {
-		if e.ppu.ppuDot < lcdMode2Bounds {
-			status.ModeFlag = 2
-			requestInterrupt = status.Mode2OAMSTATInterruptSource
-		} else if e.ppu.ppuDot < lcdMode3Bounds {
-			status.ModeFlag = 3
-		} else {
-			status.ModeFlag = 0
-			requestInterrupt = status.Mode0HBlankSTATInterruptSource
-			if status.ModeFlag != previousMode {
-				//gb.Memory.doHDMATransfer()
-			}
-		}
-	}
-
-	// Check if LYC == LY (coincidence flag)
+	status := e.mem.GetLCDStatus()
+	ly := e.mem.GetLY()
 	lyc := e.mem.GetLYC()
+
 	if ly == lyc {
 		e.mem.lcdStatus.LYCLYFlag = true
+		if status.LYCLYSTATInterruptSource {
+			e.mem.requestInterruptLCDStat()
+		}
 	} else {
 		e.mem.lcdStatus.LYCLYFlag = false
 	}
+}
+
+// Set the status of the LCD based on the current state of memory.
+func (e *Emulator) updateLCDStatus() {
+	status := e.mem.GetLCDStatus()
+
+	previousMode := status.ModeFlag
+	status.ModeFlag = e.getPPUMode()
 
 	if status.ModeFlag != previousMode {
-		if requestInterrupt {
+		if status.ModeFlag == 0 {
+			//gb.Memory.doHDMATransfer()
+		}
+
+		if e.isInterruptModeEnable(status.ModeFlag) {
 			e.mem.requestInterruptLCDStat()
 		}
 	}
-
-	if e.mem.lcdStatus.LYCLYFlag && e.mem.lcdStatus.LYCLYSTATInterruptSource && e.ppu.previousLYLYC != lyc {
-		e.mem.requestInterruptLCDStat()
-		e.ppu.previousLYLYC = lyc
-	}
+	e.lyCompare()
 
 	e.mem.SaveLCDStatus()
 }
@@ -141,10 +157,12 @@ func (e *Emulator) getColorFromVRAM(tileNumber int, xPixel, yPixel uint8) uint8 
 }
 
 func (e *Emulator) isWindowVisible() bool {
+	lcdc := e.mem.GetLCDC()
 	wx := e.mem.GetWX()
 	wy := e.mem.GetWY()
+	ly := e.mem.GetLY()
 
-	if wx <= 166 && wy <= 143 {
+	if wx <= 166 && wy <= 143 && lcdc.WindowEnable && ly > wy {
 		return true
 	}
 
@@ -167,10 +185,9 @@ func (e *Emulator) isInsideWindow(currentX uint8) bool {
 
 func (e *Emulator) getXYWindow(currentX uint8) (uint8, uint8) {
 	wx := e.mem.GetWX()
-	wy := e.mem.GetWY()
 
 	var x = currentX - wx + 7
-	var y = e.ppu.windowLineCounter - wy
+	var y = e.ppu.windowLineCounter
 
 	return x, y
 }
@@ -464,7 +481,7 @@ func (e *Emulator) proccessScanline() {
 
 func (e *Emulator) PPURunOld() bool {
 	renderFrame := false
-	e.setLCDStatus()
+	e.updateLCDStatus()
 
 	// PPU
 	cyclesElapsed := e.cycles - e.prevCycles

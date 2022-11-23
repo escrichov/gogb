@@ -1613,7 +1613,7 @@ func TestScribbltests_winpos(t *testing.T) {
 		t,
 		"../assets/roms/scribbltests/winpos.gb",
 		"../screenshots/tests/scribbltests/winpos.png",
-		70224000,
+		7022400,
 	)
 }
 
