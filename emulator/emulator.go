@@ -47,10 +47,11 @@ func NewEmulator(romFilename, bootRomFilename, fontFilename string, showWindow, 
 		romFilename:     romFilename,
 		bootRomFilename: bootRomFilename,
 		ppu: PPU{
-			ppuDot:     32,
-			paletteBGP: []uint32{0xFFFFFFFF, 0xFFFFA563, 0xFFFF0000, 0xFF000000},
-			paletteOB0: []uint32{0xFFFFFFFF, 0xFF8484FF, 0xFF3A3A94, 0xFF000000},
-			paletteOB1: []uint32{0xFFFFFFFF, 0xFFFFA563, 0xFFFF0000, 0xFF000000},
+			ppuDot:        32,
+			paletteBGP:    []uint32{0xFFFFFFFF, 0xFFFFA563, 0xFFFF0000, 0xFF000000},
+			paletteOB0:    []uint32{0xFFFFFFFF, 0xFF8484FF, 0xFF3A3A94, 0xFF000000},
+			paletteOB1:    []uint32{0xFFFFFFFF, 0xFFFFA563, 0xFFFF0000, 0xFF000000},
+			previousLYLYC: 255,
 		},
 		timer:      Timer{internalTimer: 8},
 		showWindow: showWindow,
@@ -108,13 +109,7 @@ func (e *Emulator) Run(numCycles uint64) {
 		e.timer.incrementTimers(uint16(e.cycles - e.prevCycles))
 		e.serialTransfer()
 
-		renderFrame := e.PPURun()
-		if renderFrame {
-			e.window.renderFrame()
-			if e.showWindow {
-				e.manageKeyboardEvents()
-			}
-		}
+		e.PPURun()
 
 		// Paused state
 		for e.pause {

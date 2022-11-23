@@ -1,6 +1,8 @@
 package emulator
 
-import "github.com/veandco/go-sdl2/sdl"
+import (
+	"github.com/veandco/go-sdl2/sdl"
+)
 
 type Memory struct {
 	workRam        [0x4000]uint8

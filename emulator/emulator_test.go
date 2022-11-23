@@ -1571,3 +1571,66 @@ func TestMealyBugTearoom_mbc_mbc3_rtc(t *testing.T) {
 		100000000,
 	)
 }
+
+func TestScribbltests_lycscy(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/scribbltests/lycscy.gb",
+		"../screenshots/tests/scribbltests/lycscy.png",
+		702240,
+	)
+}
+
+func TestScribbltests_lycscx(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/scribbltests/lycscx.gb",
+		"../screenshots/tests/scribbltests/lycscx.png",
+		702240,
+	)
+}
+
+func TestScribbltests_scxly(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/scribbltests/scxly.gb",
+		"../screenshots/tests/scribbltests/scxly.png",
+		702240,
+	)
+}
+
+func TestScribbltests_palettely(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/scribbltests/palettely.gb",
+		"../screenshots/tests/scribbltests/palettely.png",
+		702240,
+	)
+}
+
+func TestScribbltests_winpos(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/scribbltests/winpos.gb",
+		"../screenshots/tests/scribbltests/winpos.png",
+		70224000,
+	)
+}
+
+func TestScribbltests_statcount_auto(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/scribbltests/statcount-auto.gb",
+		"../screenshots/tests/scribbltests/statcount-auto.png",
+		70224000,
+	)
+}
+
+func TestDMGAcid2(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/dmg-acid2.gb",
+		"../screenshots/tests/dmg-acid2.png",
+		702240,
+	)
+}

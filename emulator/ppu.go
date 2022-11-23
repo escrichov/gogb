@@ -1,6 +1,8 @@
 package emulator
 
-import "sort"
+import (
+	"sort"
+)
 
 const (
 	lcdMode2Bounds = 80
@@ -58,6 +60,9 @@ type PPU struct {
 	// OAM Scan
 	spritesSelected    [10]SpriteObject
 	numSpritesSelected int
+
+	// LY=LYC
+	previousLYLYC uint8
 }
 
 func getBufferPositionFromXY(x, y, width int) int {
@@ -68,48 +73,52 @@ func getBufferPositionFromXY(x, y, width int) int {
 func (e *Emulator) setLCDStatus() {
 	status := e.mem.GetLCDStatus()
 	lcdcControl := e.mem.GetLCDC()
+	ly := e.mem.GetLY()
 
 	if !lcdcControl.LCDPPUEnable {
 		status.LYCLYFlag = false
 		status.ModeFlag = 0
+		e.mem.SaveLCDStatus()
+		return
 	}
 
-	ly := e.mem.GetLY()
-	currentMode := status.ModeFlag
-
-	var mode uint8
+	previousMode := status.ModeFlag
 	requestInterrupt := false
-
-	switch {
-	case ly >= 144:
-		mode = 1
+	if ly >= 144 {
+		status.ModeFlag = 1
 		requestInterrupt = status.Mode1VBlankSTATInterruptSource
-	case e.ppu.ppuDot < lcdMode2Bounds:
-		mode = 2
-		requestInterrupt = status.Mode2OAMSTATInterruptSource
-	case e.ppu.ppuDot < lcdMode3Bounds:
-		mode = 3
-	default:
-		mode = 0
-		requestInterrupt = status.Mode0HBlankSTATInterruptSource
-		if mode != currentMode {
-			//gb.Memory.doHDMATransfer()
+	} else {
+		if e.ppu.ppuDot < lcdMode2Bounds {
+			status.ModeFlag = 2
+			requestInterrupt = status.Mode2OAMSTATInterruptSource
+		} else if e.ppu.ppuDot < lcdMode3Bounds {
+			status.ModeFlag = 3
+		} else {
+			status.ModeFlag = 0
+			requestInterrupt = status.Mode0HBlankSTATInterruptSource
+			if status.ModeFlag != previousMode {
+				//gb.Memory.doHDMATransfer()
+			}
 		}
-	}
-
-	if requestInterrupt && mode != currentMode {
-		e.mem.requestInterruptLCDStat()
 	}
 
 	// Check if LYC == LY (coincidence flag)
 	lyc := e.mem.GetLYC()
 	if ly == lyc {
 		e.mem.lcdStatus.LYCLYFlag = true
-		if e.mem.lcdStatus.LYCLYSTATInterruptSource {
-			e.mem.requestInterruptLCDStat()
-		}
 	} else {
 		e.mem.lcdStatus.LYCLYFlag = false
+	}
+
+	if status.ModeFlag != previousMode {
+		if requestInterrupt {
+			e.mem.requestInterruptLCDStat()
+		}
+	}
+
+	if e.mem.lcdStatus.LYCLYFlag && e.mem.lcdStatus.LYCLYSTATInterruptSource && e.ppu.previousLYLYC != lyc {
+		e.mem.requestInterruptLCDStat()
+		e.ppu.previousLYLYC = lyc
 	}
 
 	e.mem.SaveLCDStatus()

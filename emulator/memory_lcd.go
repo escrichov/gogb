@@ -56,6 +56,10 @@ func (mem *Memory) GetBGP() uint8 {
 	return mem.io[328]
 }
 
+func (mem *Memory) SetBGP(bgp uint8) {
+	mem.io[327] = bgp
+}
+
 func (mem *Memory) GetOBP0() uint8 {
 	return mem.io[328]
 }
