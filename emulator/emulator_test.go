@@ -1634,3 +1634,12 @@ func TestDMGAcid2(t *testing.T) {
 		702240,
 	)
 }
+
+func TestFirstWhite(t *testing.T) {
+	RomTester(
+		t,
+		"../assets/roms/firstwhite.gb",
+		"../screenshots/tests/firstwhite.png",
+		702240*3,
+	)
+}
