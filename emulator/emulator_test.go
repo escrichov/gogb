@@ -50,7 +50,7 @@ func RomTester(t *testing.T, romFilename, originalScreenshotFilename string, run
 func TestRunEmulator(t *testing.T) {
 	RomTester(
 		t,
-		"../assets/roms/roms/bgbtest.gb",
+		"../assets/roms/games/bgbtest.gb",
 		"../screenshots/tests/roms/bgbtest.png",
 		1000000,
 	)
@@ -59,7 +59,7 @@ func TestRunEmulator(t *testing.T) {
 func TestRomPokeBlue(t *testing.T) {
 	RomTester(
 		t,
-		"../assets/roms/roms/pokeblue.gb",
+		"../assets/roms/games/pokeblue.gb",
 		"../screenshots/tests/roms/pokeblue.png",
 		100000000,
 	)
@@ -68,7 +68,7 @@ func TestRomPokeBlue(t *testing.T) {
 func TestRomPokeBlueZip(t *testing.T) {
 	RomTester(
 		t,
-		"../assets/roms/roms/pokeblue.bin.zip",
+		"../assets/roms/games/pokeblue.bin.zip",
 		"../screenshots/tests/roms/pokeblue.png",
 		100000000,
 	)
@@ -77,7 +77,7 @@ func TestRomPokeBlueZip(t *testing.T) {
 func TestRomPokeGreen(t *testing.T) {
 	RomTester(
 		t,
-		"../assets/roms/roms/pokegreen.gb",
+		"../assets/roms/games/pokegreen.gb",
 		"../screenshots/tests/roms/pokegreen.png",
 		100000000,
 	)
@@ -86,7 +86,7 @@ func TestRomPokeGreen(t *testing.T) {
 func TestRomPokeRed(t *testing.T) {
 	RomTester(
 		t,
-		"../assets/roms/roms/pokered.gb",
+		"../assets/roms/games/pokered.gb",
 		"../screenshots/tests/roms/pokered.png",
 		100000000,
 	)
@@ -95,7 +95,7 @@ func TestRomPokeRed(t *testing.T) {
 func TestRomTetris(t *testing.T) {
 	RomTester(
 		t,
-		"../assets/roms/roms/tetris.gb",
+		"../assets/roms/games/tetris.gb",
 		"../screenshots/tests/roms/tetris.png",
 		10000000,
 	)
@@ -104,7 +104,7 @@ func TestRomTetris(t *testing.T) {
 func TestRomOpus5(t *testing.T) {
 	RomTester(
 		t,
-		"../assets/roms/roms/opus5.gb",
+		"../assets/roms/games/opus5.gb",
 		"../screenshots/tests/roms/opus5.png",
 		500000,
 	)
@@ -113,7 +113,7 @@ func TestRomOpus5(t *testing.T) {
 func TestRomZelda(t *testing.T) {
 	RomTester(
 		t,
-		"../assets/roms/roms/zelda.gb",
+		"../assets/roms/games/zelda.gb",
 		"../screenshots/tests/roms/zelda.png",
 		10000000,
 	)
@@ -122,7 +122,7 @@ func TestRomZelda(t *testing.T) {
 func TestRomSupermarioland(t *testing.T) {
 	RomTester(
 		t,
-		"../assets/roms/roms/supermarioland.gb",
+		"../assets/roms/games/supermarioland.gb",
 		"../screenshots/tests/roms/supermarioland.png",
 		10000000,
 	)
@@ -131,7 +131,7 @@ func TestRomSupermarioland(t *testing.T) {
 func TestRomTicTacToe(t *testing.T) {
 	RomTester(
 		t,
-		"../assets/roms/roms/tictactoe.gb",
+		"../assets/roms/games/tictactoe.gb",
 		"../screenshots/tests/roms/tictactoe.png",
 		1000000,
 	)
@@ -140,7 +140,7 @@ func TestRomTicTacToe(t *testing.T) {
 func TestRomTobu(t *testing.T) {
 	RomTester(
 		t,
-		"../assets/roms/roms/tobu.gb",
+		"../assets/roms/games/tobu.gb",
 		"../screenshots/tests/roms/tobu.png",
 		100000000,
 	)
@@ -149,7 +149,7 @@ func TestRomTobu(t *testing.T) {
 func TestRomDino(t *testing.T) {
 	RomTester(
 		t,
-		"../assets/roms/roms/dino.gb",
+		"../assets/roms/games/dino.gb",
 		"../screenshots/tests/roms/dino.png",
 		100000000,
 	)
@@ -158,7 +158,7 @@ func TestRomDino(t *testing.T) {
 func TestRomHelloWorld(t *testing.T) {
 	RomTester(
 		t,
-		"../assets/roms/roms/hello.gb",
+		"../assets/roms/games/hello.gb",
 		"../screenshots/tests/roms/hello.png",
 		1000000,
 	)
@@ -167,7 +167,7 @@ func TestRomHelloWorld(t *testing.T) {
 func TestRomHangman(t *testing.T) {
 	RomTester(
 		t,
-		"../assets/roms/roms/hangman.gb",
+		"../assets/roms/games/hangman.gb",
 		"../screenshots/tests/roms/hangman.png",
 		100000000,
 	)
