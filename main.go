@@ -8,7 +8,7 @@ import (
 func main() {
 
 	emu, err := emulator.NewEmulator(
-		"./assets/roms/roms/pokeblue.gb",
+		"./assets/roms/roms/zelda.gb",
 		//"./assets/roms/bootroms/dmg_boot.bin",
 		"",
 		"./assets/fonts/arial.ttf",

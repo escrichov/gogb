@@ -329,7 +329,8 @@ func (e *Emulator) getSpriteColor(sprite *SpriteObject, currentX uint8) PPUColor
 		// Bit 0 of tile index for 8x16 objects should be ignored
 		tileIndex = sprite.tileIndex & 0xFE
 		if pixelY >= 8 {
-			tileIndex = tileIndex + 1
+			tileIndex = tileIndex | 0x01
+			pixelY -= 8
 		}
 	}
 
