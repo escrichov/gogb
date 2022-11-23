@@ -63,6 +63,9 @@ type PPU struct {
 
 	// LY=LYC
 	previousLYLYC uint8
+
+	// Window counter
+	windowLineCounter uint8
 }
 
 func getBufferPositionFromXY(x, y, width int) int {
@@ -137,6 +140,17 @@ func (e *Emulator) getColorFromVRAM(tileNumber int, xPixel, yPixel uint8) uint8 
 	return bitMSB<<1 + bitLSB
 }
 
+func (e *Emulator) isWindowVisible() bool {
+	wx := e.mem.GetWX()
+	wy := e.mem.GetWY()
+
+	if wx <= 166 && wy <= 143 {
+		return true
+	}
+
+	return false
+}
+
 func (e *Emulator) isInsideWindow(currentX uint8) bool {
 	lcdc := e.mem.GetLCDC()
 	ly := e.mem.GetLY()
@@ -152,12 +166,11 @@ func (e *Emulator) isInsideWindow(currentX uint8) bool {
 }
 
 func (e *Emulator) getXYWindow(currentX uint8) (uint8, uint8) {
-	ly := e.mem.GetLY()
 	wx := e.mem.GetWX()
 	wy := e.mem.GetWY()
 
 	var x = currentX - wx + 7
-	var y = ly - wy
+	var y = e.ppu.windowLineCounter - wy
 
 	return x, y
 }
@@ -294,7 +307,16 @@ func (e *Emulator) flipTileYPosition(position uint8) uint8 {
 
 func (e *Emulator) getSpriteColor(sprite *SpriteObject, currentX uint8) PPUColor {
 	pixelX, pixelY := e.getXYSprite(sprite, currentX)
-	spriteColor := e.getColorFromVRAM(int(sprite.tileIndex), pixelX, pixelY)
+	var tileIndex = sprite.tileIndex
+	if e.getObjectHeight() == 16 {
+		// Bit 0 of tile index for 8x16 objects should be ignored
+		tileIndex = sprite.tileIndex & 0xFE
+		if pixelY >= 8 {
+			tileIndex = tileIndex + 1
+		}
+	}
+
+	spriteColor := e.getColorFromVRAM(int(tileIndex), pixelX, pixelY)
 	return PPUColor{paletteIndex: sprite.paletteIndex, colorIndex: spriteColor}
 }
 

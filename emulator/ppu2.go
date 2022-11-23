@@ -81,7 +81,17 @@ func (e *Emulator) PPURunCycleEnabled() bool {
 		}
 
 		// Increment Line
-		e.mem.SetLY((ly + 1) % 154)
+		ly = (ly + 1) % 154
+		e.mem.SetLY(ly)
+
+		// Increment window internal line counter
+		if ly == 0 {
+			e.ppu.windowLineCounter = 0
+		} else {
+			if e.isWindowVisible() {
+				e.ppu.windowLineCounter = (e.ppu.windowLineCounter + 1) % 154
+			}
+		}
 		e.ppu.ppuDot = 0
 	} else {
 		e.ppu.ppuDot++
@@ -98,6 +108,7 @@ func (e *Emulator) PPURunCycle() bool {
 		renderFrame = e.PPURunCycleEnabled()
 	} else {
 		e.mem.SetLY(0)
+		e.ppu.windowLineCounter = 0
 		e.ppu.ppuDot = 0
 	}
 
