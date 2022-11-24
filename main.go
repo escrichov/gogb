@@ -8,7 +8,7 @@ import (
 func main() {
 
 	emu, err := emulator.NewEmulator(
-		"./assets/roms/scribbltests/winpos.gb",
+		"./assets/roms/games/supermarioland.gb",
 		//"./assets/roms/bootroms/dmg_boot.bin",
 		"",
 		"./assets/fonts/arial.ttf",

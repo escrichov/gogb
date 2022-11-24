@@ -443,18 +443,21 @@ func (e *Emulator) isSpriteIsInColumn(sprite *SpriteObject, currentX uint8) bool
 	}
 }
 
-func (e *Emulator) proccessScanline() {
+func (e *Emulator) drawScanline() {
 	lcdc := e.mem.GetLCDC()
 	ly := e.mem.GetLY()
 	framebuffer := e.window.GetFramebuffer()
 
-	e.oamScan()
-
 	for tmp := WIDTH - 1; tmp >= 0; tmp-- {
 		currentX := uint8(tmp)
+		var color PPUColor
 
 		// Get Background or Window pixel
-		color := e.getBGWindowColor(currentX)
+		if lcdc.BgWindowEnablePriority {
+			color = e.getBGWindowColor(currentX)
+		} else {
+			color = PPUColor{colorIndex: 0, paletteIndex: paletteBGP}
+		}
 
 		// Get sprite pixel
 		if lcdc.ObjEnable {
@@ -480,39 +483,100 @@ func (e *Emulator) proccessScanline() {
 	}
 }
 
-func (e *Emulator) PPURunOld() bool {
+func (e *Emulator) PPURun() bool {
 	renderFrame := false
-	e.updateLCDStatus()
 
 	// PPU
 	cyclesElapsed := e.cycles - e.prevCycles
 	for i := uint64(0); i < cyclesElapsed; i++ {
-		lcdc := e.mem.GetLCDC()
-		if lcdc.LCDPPUEnable {
-			e.ppu.ppuDot++
-
-			// Render Scanline (Every 256 PPU Dots)
-			if e.ppu.ppuDot == 456 {
-				ly := e.mem.GetLY()
-
-				// Only render visible lines (up to line 144)
-				if ly < HEIGHT {
-					e.proccessScanline()
-				}
-
-				if ly == (HEIGHT - 1) {
-					e.mem.requestInterruptVBlank()
-					renderFrame = true
-				}
-
-				// Increment Line
-				e.mem.SetLY((ly + 1) % 154)
-				e.ppu.ppuDot = 0
+		renderFrame = e.PPURunCycle()
+		if renderFrame {
+			e.window.renderFrame()
+			if e.showWindow {
+				e.manageKeyboardEvents()
 			}
-		} else {
-			e.mem.SetLY(0)
-			e.ppu.ppuDot = 0
 		}
+	}
+
+	return renderFrame
+}
+
+func (ppu *PPU) isEndOfScanline() bool {
+	if ppu.ppuDot == 0 {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (ppu *PPU) isBeginOfVBlank(ly uint8) bool {
+	if ly == HEIGHT {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (e *Emulator) incrementWindowLineCounter(ly uint8) {
+	if ly == 0 {
+		e.ppu.windowLineCounter = 0
+	} else {
+		if e.isWindowVisible() {
+			e.ppu.windowLineCounter++
+		}
+	}
+}
+
+func (e *Emulator) PPURunCycleEnabled() bool {
+	ly := e.mem.GetLY()
+	renderFrame := false
+
+	// Scanline (Every 456 PPU Dots)
+	e.ppu.ppuDot = (e.ppu.ppuDot + 1) % 456
+	if e.ppu.isEndOfScanline() {
+		// Increment Line
+		ly = (ly + 1) % 154
+		e.mem.SetLY(ly)
+
+		// Interrupt VBlank and draw frame
+		if e.ppu.isBeginOfVBlank(ly) {
+			e.mem.requestInterruptVBlank()
+			renderFrame = true
+		}
+
+		// Increment window internal line counter
+		e.incrementWindowLineCounter(ly)
+	}
+
+	e.updateLCDStatus()
+
+	// Modes 2 (OAM scan) & 3 (Drawing pixels)
+	if ly < HEIGHT {
+		if e.ppu.ppuDot == 80 {
+			e.oamScan()
+		} else if e.ppu.ppuDot == 369 {
+			e.drawScanline()
+		}
+	}
+
+	return renderFrame
+}
+
+func (e *Emulator) PPURunCycle() bool {
+	renderFrame := false
+
+	lcdc := e.mem.GetLCDC()
+	if lcdc.LCDPPUEnable {
+		renderFrame = e.PPURunCycleEnabled()
+	} else {
+		e.mem.SetLY(0)
+		e.ppu.windowLineCounter = 0
+		e.ppu.ppuDot = 0
+
+		status := e.mem.GetLCDStatus()
+		status.LYCLYFlag = false
+		status.ModeFlag = 0
+		e.mem.SaveLCDStatus()
 	}
 
 	return renderFrame
