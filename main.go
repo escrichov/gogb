@@ -13,7 +13,7 @@ func main() {
 		"",
 		"./assets/fonts/arial.ttf",
 		true,
-		false)
+		true)
 	if err != nil {
 		log.Fatal(err)
 	}
