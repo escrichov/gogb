@@ -531,6 +531,8 @@ func (e *Emulator) PPURunCycleEnabled() bool {
 	ly := e.mem.GetLY()
 	renderFrame := false
 
+	e.updateLCDStatus()
+
 	// Scanline (Every 456 PPU Dots)
 	e.ppu.ppuDot = (e.ppu.ppuDot + 1) % 456
 	if e.ppu.isEndOfScanline() {
@@ -548,13 +550,11 @@ func (e *Emulator) PPURunCycleEnabled() bool {
 		e.incrementWindowLineCounter(ly)
 	}
 
-	e.updateLCDStatus()
-
 	// Modes 2 (OAM scan) & 3 (Drawing pixels)
 	if ly < HEIGHT {
 		if e.ppu.ppuDot == 80 {
 			e.oamScan()
-		} else if e.ppu.ppuDot == 369 {
+		} else if e.ppu.ppuDot == lcdMode3Bounds {
 			e.drawScanline()
 		}
 	}
