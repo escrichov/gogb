@@ -1,0 +1,7 @@
+roadrash.gb -> Se queda la pantalla en blanco
+donkeykong.gb -> Se queda la pantalla azul bloqueada
+dino.gb -> Se queda bloqueada la pantalla a veces (Opcode 221 not found o ningún error)
+donkeykongland.gb -> Parpadea la pantalla
+prehistorikman.gb -> Fallan los efectos (Es necesario implementar la ppu y la cpu muy precisas)
+roadrash.gb -> Se queda la pantalla en blanco
+tobu.gb -> Se queda la pantalla parada con rayas
