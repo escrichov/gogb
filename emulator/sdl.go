@@ -30,6 +30,9 @@ type Window struct {
 	// Window visible or only as a buffer
 	showWindow bool
 
+	// Window on fullscreen
+	fullScreen bool
+
 	// Frames per second
 	frames                    uint64
 	framesPerSecond           uint32
@@ -97,7 +100,7 @@ func (w *Window) initializeSDL(windowName, fontFilename string, windowScale floa
 			sdl.WINDOWPOS_CENTERED,
 			int32(WIDTH*windowScale),
 			int32(HEIGHT*windowScale),
-			sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL)
+			sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL|sdl.WINDOW_RESIZABLE)
 		if err != nil {
 			return err
 		}
@@ -148,6 +151,9 @@ func (w *Window) initializeSDL(windowName, fontFilename string, windowScale floa
 	if err != nil {
 		return err
 	}
+
+	// This keeps aspect ratio when resizing window
+	w.renderer.SetLogicalSize(WIDTH, HEIGHT)
 
 	// Vsync
 	w.renderer.RenderSetVSync(w.vsyncEnabled)
@@ -376,4 +382,14 @@ func (w *Window) GetFramebuffer() *[WIDTH * HEIGHT]uint32 {
 
 func (w *Window) GetKeyboardState() []uint8 {
 	return w.keyboardState
+}
+
+func (w *Window) ToggleFullScreen() {
+	w.fullScreen = !w.fullScreen
+	if w.fullScreen {
+		w.window.SetFullscreen(sdl.WINDOW_FULLSCREEN)
+	} else {
+		w.window.SetFullscreen(0)
+		w.window.SetPosition(sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED)
+	}
 }

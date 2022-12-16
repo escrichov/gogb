@@ -28,8 +28,10 @@ func (e *Emulator) manageKeyboardEvents() {
 						msg = fmt.Sprintf("Vsync disabled")
 					}
 					e.window.SetMessage(msg, time.Second*3)
-				case sdl.K_f:
+				case sdl.K_t:
 					e.window.ToggleShowFPS()
+				case sdl.K_f:
+					e.window.ToggleFullScreen()
 				case sdl.K_k:
 					snapshotFile := "snapshot.png"
 					e.window.TakeSnapshot(snapshotFile)
