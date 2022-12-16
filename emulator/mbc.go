@@ -24,6 +24,7 @@ type MemoryBankController interface {
 	Read(address uint16) uint8
 	Write(address uint16, val uint8)
 	GetFeatures() *MBCFeatures
+	GetRam() []byte
 }
 
 type BaseMBC struct {
@@ -167,6 +168,10 @@ func newBaseMBC(romData []byte, romFilename string) (*BaseMBC, error) {
 
 func (mbc *BaseMBC) GetFeatures() *MBCFeatures {
 	return mbc.MBCFeatures
+}
+
+func (mbc *BaseMBC) GetRam() []byte {
+	return mbc.ram
 }
 
 func getMemoryBankControllerFeatures(romData []byte, romFilename string) (*MBCFeatures, error) {
