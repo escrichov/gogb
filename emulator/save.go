@@ -164,7 +164,7 @@ func (e *Emulator) BessStore(filename string) error {
 	binary.Write(data, binary.LittleEndian, e.cpu.HL.value)
 	binary.Write(data, binary.LittleEndian, e.cpu.SP.value)
 	binary.Write(data, binary.LittleEndian, e.IME)
-	binary.Write(data, binary.LittleEndian, e.mem.GetIF()) // The value of the IE register
+	binary.Write(data, binary.LittleEndian, e.mem.GetIE()) // The value of the IE register
 	binary.Write(data, binary.LittleEndian, e.halt)        // Execution state (0 = running; 1 = halted; 2 = stopped)
 	binary.Write(data, binary.LittleEndian, uint8(0))      // Reserved, must be 0
 	data.Write(e.mem.io[0x100:0x180])                      // Memory-mapped Registers
@@ -648,7 +648,7 @@ blockLoop:
 	e.cpu.SetDE(bess.de)
 	e.cpu.SetHL(bess.hl)
 	e.cpu.SetSP(bess.sp)
-	e.mem.SetIF(bess.ie)
+	e.mem.SetIE(bess.ie)
 	e.IME = bess.ime
 	e.halt = bess.halt
 
